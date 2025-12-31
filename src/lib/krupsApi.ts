@@ -1,9 +1,7 @@
 import type { Product } from '@/types';
 
-// KRUPS API Configuration
-const KRUPS_API_URL = import.meta.env.DEV
-  ? '/krups-api'
-  : (import.meta.env.VITE_KRUPS_API_URL || 'https://ai-search-api-krups-production.containerapps.ru');
+// KRUPS API Configuration - always use proxy to avoid CORS
+const KRUPS_API_URL = '/krups-api';
 
 const CAPTCHA_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
 

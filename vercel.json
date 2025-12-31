@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/krups-api/:path*",
+      "destination": "https://ai-search-api-krups-production.containerapps.ru/:path*"
+    }
+  ]
+}
