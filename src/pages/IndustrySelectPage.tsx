@@ -25,7 +25,7 @@ const industries: Industry[] = [
   {
     id: 'brainform',
     title: 'Beauty and cosmetic',
-    image: '/e2192f989c82b221d9545f80ab1290c1b2d378c4.png', // Woman
+    image: '/Image.png', // Woman
   },
 ];
 
@@ -169,33 +169,11 @@ function IndustryCard({ industry, onClick }: IndustryCardProps) {
 
       {/* Title - positioned above footer bar */}
       <h3
-        className="absolute left-4 right-4 md:left-[20px] md:right-[20px] text-[18px] md:text-[20px] font-semibold text-white text-left bottom-[60px] md:bottom-[72px]"
+        className="absolute left-4 right-4 md:left-[20px] md:right-[20px] text-[18px] md:text-[20px] font-semibold text-white text-center bottom-[60px] md:bottom-[72px]"
       >
         {industry.title}
       </h3>
 
-      {/* Footer bar */}
-      <div
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 md:px-[20px] md:py-[16px]"
-        style={{ backgroundColor: tokens.primary }}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: tokens.primaryForeground, opacity: 0.5 }}
-          />
-          <span
-            className="text-[13px] md:text-[14px]"
-            style={{ color: tokens.primaryForeground }}
-          >
-            Label
-          </span>
-        </div>
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: tokens.primaryForeground, opacity: 0.5 }}
-        />
-      </div>
     </button>
   );
 }
