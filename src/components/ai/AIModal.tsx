@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, History, PenSquare, Send, ArrowRight } from 'lucide-react';
+import { X, History, PenSquare, ArrowRight, Settings, ImageIcon, FileText, Mic, ArrowUp } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestions } from '@/lib/themes';
@@ -109,19 +109,18 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
         onClick={onClose}
       />
 
-      {/* Modal Container */}
+      {/* Modal Container - Full screen on mobile, centered on desktop */}
       <div
-        className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[900px] md:h-[600px] z-50 flex overflow-hidden rounded-2xl"
+        className="fixed inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[900px] md:h-[600px] z-50 flex overflow-hidden md:rounded-2xl"
         style={{
           backgroundColor: isDark ? 'var(--neutral-999)' : '#FFFFFF',
           boxShadow: '0 24px 48px rgba(0, 0, 0, 0.2)',
-          animation: 'modalIn 0.3s ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Sidebar */}
+        {/* Sidebar - Hidden on mobile */}
         <div
-          className="flex flex-col transition-all duration-300 border-r"
+          className="hidden md:flex flex-col transition-all duration-300 border-r"
           style={{
             width: sidebarOpen ? '240px' : '56px',
             backgroundColor: isDark ? 'var(--neutral-900)' : 'var(--neutral-0)',
@@ -195,7 +194,7 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+            className="absolute top-3 right-3 md:top-4 md:right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
             style={{
               backgroundColor: isDark ? 'var(--neutral-800)' : 'var(--neutral-100)',
               color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
@@ -205,19 +204,18 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
           </button>
 
           {/* Messages area */}
-          <div className="flex-1 overflow-y-auto p-6 relative">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-14 md:pt-6 relative">
             {!hasMessages ? (
               /* Initial state - floating suggestion chip */
-              <div className="h-full flex items-start justify-end pt-8 pr-4">
+              <div className="h-full flex items-start justify-end pt-4 md:pt-8 pr-0 md:pr-4">
                 <button
                   onClick={() => handleSend(suggestedQuestions[0]?.text || '')}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[14px] transition-all hover:scale-105"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] md:text-[14px] transition-all hover:scale-105"
                   style={{
                     backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
                     color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
-                    animation: 'fadeInUp 0.5s ease-out',
                   }}
                 >
                   {suggestedQuestions[0]?.text || 'How to choose a coffee machine?'}
@@ -226,13 +224,8 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
             ) : (
               /* Chat messages */
               <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div
-                    key={message.id}
-                    style={{
-                      animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
-                    }}
-                  >
+                {messages.map((message) => (
+                  <div key={message.id}>
                     <ChatMessage message={message} />
                   </div>
                 ))}
@@ -242,60 +235,124 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
           </div>
 
           {/* Input area */}
-          <div className="p-4 border-t" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
-            {/* Input field */}
-            <div
-              className="flex items-center gap-3 px-4 py-3 rounded-xl"
-              style={{
-                backgroundColor: isDark ? 'var(--neutral-800)' : 'var(--neutral-100)',
-                border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
-              }}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={hasMessages ? 'Задайте уточняющий вопрос' : 'Задайте вопрос'}
-                className="flex-1 bg-transparent border-none outline-none text-[14px]"
-                style={{
-                  color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
-                }}
-                disabled={isLoading}
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isLoading}
-                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:opacity-90 disabled:opacity-50"
-                style={{
-                  backgroundColor: theme.id === 'brownmarket' ? 'var(--accent)' : 'var(--primary)',
-                  color: '#FFFFFF',
-                }}
-              >
-                <Send className="w-4 h-4" />
-              </button>
+          <div
+            className="p-3 md:p-4 border-t"
+            style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}
+          >
+            {/* Input row - icons inline on desktop, separate on mobile */}
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Desktop: Icons + Input + Send in one row */}
+              <div className="flex items-center gap-3 flex-1">
+                {/* Icons - hidden on mobile, shown on desktop */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Settings
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                  <ImageIcon
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                  <FileText
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                </div>
+
+                {/* Input field */}
+                <div
+                  className="flex items-center gap-2 flex-1 px-4 py-3 rounded-xl"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-800)' : 'var(--neutral-100)',
+                    border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--primary)'}`,
+                  }}
+                >
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask me anything..."
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] md:text-[15px]"
+                    style={{
+                      color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+                    }}
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={() => handleSend()}
+                    disabled={!input.trim() || isLoading}
+                    className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{
+                      backgroundColor: input.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
+                      color: input.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
+                    }}
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Voice mode button - desktop */}
+                <button
+                  className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all hover:opacity-80 whitespace-nowrap"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                    color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                  }}
+                >
+                  <Mic className="w-4 h-4" />
+                  Voice mode
+                </button>
+              </div>
+
+              {/* Mobile: Icons row below input */}
+              <div className="flex md:hidden items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Settings
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                  <ImageIcon
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                  <FileText
+                    className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                  />
+                </div>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all hover:opacity-80"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                    color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                  }}
+                >
+                  <Mic className="w-4 h-4" />
+                  Voice mode
+                </button>
+              </div>
             </div>
 
             {/* Suggested questions - shown after first message */}
-            {hasMessages && (
-              <div className="mt-4">
+            {hasMessages && !isLoading && (
+              <div className="mt-3 md:mt-4">
                 <p
-                  className="text-[12px] mb-2"
+                  className="text-[11px] md:text-[12px] mb-2"
                   style={{ color: 'var(--neutral-500)' }}
                 >
-                  Возможно Вас также заинтересует
+                  You might also be interested in
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {suggestedQuestions.slice(0, 3).map((q, index) => (
+                  {suggestedQuestions.slice(0, 3).map((q) => (
                     <button
                       key={q.id}
                       onClick={() => handleSend(q.text)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] transition-all hover:scale-105"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] md:text-[13px] transition-all hover:scale-105"
                       style={{
                         backgroundColor: isDark ? 'var(--neutral-800)' : 'var(--neutral-100)',
                         color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                        animation: `fadeInUp 0.3s ease-out ${index * 0.1}s both`,
                       }}
                     >
                       {q.text}
@@ -311,14 +368,14 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
 
       {/* Animation keyframes */}
       <style>{`
-        @keyframes modalIn {
+        @keyframes slideUp {
           from {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.95);
+            transform: translateY(100%);
           }
           to {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateY(0);
           }
         }
 
@@ -330,6 +387,18 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @media (max-width: 767px) {
+          .modal-container {
+            animation: slideUp 0.3s ease-out;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .modal-container {
+            animation: fadeInUp 0.3s ease-out;
           }
         }
       `}</style>

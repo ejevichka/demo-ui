@@ -1,24 +1,50 @@
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import type { ThemeName } from '@/types';
+
+// Three industries matching IndustrySelectPage cards
+const industries: { id: ThemeName; name: string }[] = [
+  { id: 'brownmarket', name: 'Consumer electronics' },
+  { id: 'bluemarket', name: 'Sport and outdoor' },
+  { id: 'brainform', name: 'Beauty and cosmetic' },
+];
 
 export function ThemeSwitcher() {
-  const { themeName, setTheme, availableThemes } = useTheme();
+  const { themeName, setTheme, theme } = useTheme();
+  const isDark = theme.isDark;
 
   return (
-    <div className="fixed top-20 right-4 z-50 flex flex-col gap-2 p-2 bg-white rounded-lg shadow-lg border border-[var(--border)]">
-      <span className="text-xs font-medium text-[var(--muted-foreground)] px-2">Theme</span>
-      {availableThemes.map((theme) => (
+    <div
+      className="fixed top-20 right-4 z-50 flex flex-col gap-1 p-2 rounded-xl shadow-lg"
+      style={{
+        backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+        border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
+      }}
+    >
+      <span
+        className="text-[11px] font-medium uppercase tracking-wider px-2 py-1"
+        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+      >
+        Industry
+      </span>
+      {industries.map((industry) => (
         <button
-          key={theme.id}
-          onClick={() => setTheme(theme.id)}
+          key={industry.id}
+          onClick={() => setTheme(industry.id)}
           className={cn(
-            'px-3 py-1.5 text-sm rounded-md transition-colors text-left',
-            themeName === theme.id
-              ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
-              : 'hover:bg-[var(--muted)]'
+            'px-3 py-2 text-[13px] rounded-lg transition-all text-left',
+            themeName === industry.id
+              ? 'font-medium'
+              : 'hover:opacity-70'
           )}
+          style={{
+            backgroundColor: themeName === industry.id ? 'var(--primary)' : 'transparent',
+            color: themeName === industry.id
+              ? 'var(--primary-foreground)'
+              : isDark ? '#FFFFFF' : 'var(--neutral-900)',
+          }}
         >
-          {theme.name}
+          {industry.name}
         </button>
       ))}
     </div>

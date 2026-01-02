@@ -160,23 +160,27 @@ export function AISearchBar() {
             opacity: isExpanded ? 1 : 0,
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4">
-            <div className="flex items-center gap-3">
-              <button
-                className="p-2 rounded-lg transition-colors hover:bg-black/5"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-              >
-                <PanelLeft className="w-5 h-5" />
-              </button>
-              <h2
-                className="text-[28px] font-bold"
-                style={{ color: 'var(--primary)' }}
-              >
-                AI Smart assistant
-              </h2>
+          {/* Header - only show title when no messages */}
+          {!hasMessages ? (
+            <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  className="p-2 rounded-lg transition-colors hover:bg-black/5"
+                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                >
+                  <PanelLeft className="w-5 h-5" />
+                </button>
+                <h2
+                  className="text-[28px] font-bold"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  AI Smart assistant
+                </h2>
+              </div>
             </div>
-            {hasMessages && (
+          ) : (
+            /* When has messages - show only New chat button */
+            <div className="flex items-center justify-end px-6 pt-4 pb-2">
               <button
                 onClick={handleNewChat}
                 className="text-[14px] px-3 py-1.5 rounded-lg transition-colors hover:opacity-70"
@@ -187,8 +191,8 @@ export function AISearchBar() {
               >
                 New chat
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Content area - either intro or chat messages */}
           <div
@@ -276,128 +280,157 @@ export function AISearchBar() {
         </div>
 
         {/* Input bar - always visible */}
-        <div
-          className="flex items-center gap-4 px-6 py-5"
-          style={{ minHeight: '88px' }}
-        >
-          {/* Left section: Menu dots + icons */}
-          <div className="flex items-center gap-4">
-            {!isExpanded && (
-              <>
-                <button
-                  className="p-1 transition-colors hover:opacity-70"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal
-                    className="w-5 h-5"
-                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                  />
-                </button>
-                <div
-                  className="w-px h-6"
-                  style={{ backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-300)' }}
-                />
-              </>
-            )}
-            <div className="flex items-center gap-3">
-              <Settings
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-              />
-              <ImageIcon
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-              />
-              <FileText
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-              />
-            </div>
-          </div>
-
-          {/* Center: Input */}
-          <div className="flex-1 flex items-center">
-            {isExpanded ? (
-              <div
-                className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
-                style={{
-                  backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                  border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--neutral-200)'}`,
-                }}
-              >
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={hasMessages ? 'Ask a follow-up question...' : 'Ask me anything...'}
-                  className="flex-1 bg-transparent border-none outline-none text-[16px]"
-                  style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-                  disabled={isLoading}
-                />
-                {inputValue && (
+        <div className="px-4 lg:px-6 py-4 lg:py-5">
+          {/* Main row: icons (desktop) + input + send + voice */}
+          <div className="flex items-center gap-3 lg:gap-4">
+            {/* Left section: Menu dots + icons - only on desktop (>= 1000px) */}
+            <div className="hidden lg:flex items-center gap-4">
+              {!isExpanded && (
+                <>
                   <button
-                    onClick={() => setInputValue('')}
-                    className="p-1 rounded-full hover:bg-black/5 transition-colors"
+                    className="p-1 transition-colors hover:opacity-70"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <X
-                      className="w-4 h-4"
+                    <MoreHorizontal
+                      className="w-5 h-5"
                       style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
                     />
                   </button>
-                )}
+                  <div
+                    className="w-px h-6"
+                    style={{ backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-300)' }}
+                  />
+                </>
+              )}
+              <div className="flex items-center gap-3">
+                <Settings
+                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                />
+                <ImageIcon
+                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                />
+                <FileText
+                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                />
               </div>
-            ) : (
-              <div
-                onClick={handleExpand}
-                className="flex-1 cursor-pointer"
-              >
-                <span
-                  className="text-[16px]"
-                  style={{ color: 'var(--neutral-400)' }}
+            </div>
+
+            {/* Center: Input */}
+            <div className="flex-1 flex items-center">
+              {isExpanded ? (
+                <div
+                  className="flex-1 flex items-center gap-2 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                    border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--neutral-200)'}`,
+                  }}
                 >
-                  Ask me anything...
-                </span>
-              </div>
-            )}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={hasMessages ? 'Ask a follow-up question...' : 'Ask me anything...'}
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] lg:text-[16px]"
+                    style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+                    disabled={isLoading}
+                  />
+                  {inputValue && (
+                    <button
+                      onClick={() => setInputValue('')}
+                      className="p-1 rounded-full hover:bg-black/5 transition-colors"
+                    >
+                      <X
+                        className="w-4 h-4"
+                        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                      />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div
+                  onClick={handleExpand}
+                  className="flex-1 cursor-pointer"
+                >
+                  <span
+                    className="text-[14px] lg:text-[16px]"
+                    style={{ color: 'var(--neutral-400)' }}
+                  >
+                    Ask me anything...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Right section: Send button + Voice */}
+            <div className="flex items-center gap-2 lg:gap-3">
+              {/* Send button */}
+              <button
+                onClick={() => isExpanded ? handleSend() : handleExpand()}
+                disabled={isExpanded && isLoading}
+                className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-50"
+                style={{
+                  backgroundColor: isExpanded && inputValue.trim()
+                    ? 'var(--primary)'
+                    : isDark ? 'var(--neutral-700)' : 'var(--neutral-200)',
+                  color: isExpanded && inputValue.trim()
+                    ? '#FFFFFF'
+                    : isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
+                }}
+              >
+                {isExpanded && hasMessages ? (
+                  <Send className="w-4 h-4 lg:w-5 lg:h-5" />
+                ) : (
+                  <ArrowUp className="w-4 h-4 lg:w-5 lg:h-5" />
+                )}
+              </button>
+
+              {/* Voice mode button */}
+              <button
+                className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl text-[13px] lg:text-[14px] font-medium transition-all hover:opacity-80"
+                style={{
+                  backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                  color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Mic className="w-4 h-4" />
+                <span className="hidden sm:inline">{isExpanded ? 'Voice mode' : 'Label'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Right section: Send button + Voice */}
-          <div className="flex items-center gap-3">
-            {/* Send button */}
-            <button
-              onClick={() => isExpanded ? handleSend() : handleExpand()}
-              disabled={isExpanded && isLoading}
-              className="w-12 h-12 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-50"
-              style={{
-                backgroundColor: isExpanded && inputValue.trim()
-                  ? 'var(--primary)'
-                  : isDark ? 'var(--neutral-700)' : 'var(--neutral-200)',
-                color: isExpanded && inputValue.trim()
-                  ? '#FFFFFF'
-                  : isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
-              }}
-            >
-              {isExpanded && hasMessages ? (
-                <Send className="w-5 h-5" />
-              ) : (
-                <ArrowUp className="w-5 h-5" />
-              )}
-            </button>
-
-            {/* Voice mode button */}
-            <button
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all hover:opacity-80"
-              style={{
-                backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Mic className="w-4 h-4" />
-              <span>{isExpanded ? 'Voice mode' : 'Label'}</span>
-            </button>
+          {/* Mobile icons row - below input (< 1000px) */}
+          <div className="flex lg:hidden items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}` }}>
+            <div className="flex items-center gap-4">
+              <Settings
+                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+              />
+              <ImageIcon
+                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+              />
+              <FileText
+                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+              />
+            </div>
+            {!isExpanded && (
+              <button
+                className="p-1 transition-colors hover:opacity-70"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal
+                  className="w-5 h-5"
+                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                />
+              </button>
+            )}
           </div>
         </div>
 
