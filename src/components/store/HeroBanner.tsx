@@ -4,6 +4,10 @@ export function HeroBanner() {
   const { theme } = useTheme();
 
   // Different layouts based on theme
+  if (theme.id === 'brainform') {
+    return <BeautyHero />;
+  }
+
   if (theme.id === 'bluemarket') {
     return <SplitHero />;
   }
@@ -14,6 +18,88 @@ export function HeroBanner() {
 
   // Default: RedMarket style with solid color block
   return <BlockHero />;
+}
+
+// ElysianGlow Beauty style - elegant serif typography
+function BeautyHero() {
+  const { theme } = useTheme();
+
+  return (
+    <section
+      className="relative overflow-hidden min-h-[380px] md:min-h-[500px]"
+      style={{ backgroundColor: '#F5F3EE' }}
+    >
+      <div className="container mx-auto px-4 md:px-8 h-full">
+        <div className="flex flex-col lg:flex-row items-center h-full py-8 lg:py-0">
+          {/* Left: Text content */}
+          <div className="flex-1 flex flex-col justify-center py-8 lg:py-16 z-10">
+            {/* Flash sale label */}
+            {theme.heroLabel && (
+              <span
+                className="text-[18px] md:text-[20px] mb-2"
+                style={{
+                  color: '#7A7A7A',
+                  fontStyle: 'italic',
+                  fontFamily: 'Georgia, serif',
+                }}
+              >
+                {theme.heroLabel}
+              </span>
+            )}
+
+            {/* Main title - serif font */}
+            <h1
+              className="text-[48px] md:text-[72px] lg:text-[88px] font-normal leading-[0.95] mb-6"
+              style={{
+                color: '#2D2D2D',
+                fontFamily: 'Georgia, "Times New Roman", serif',
+              }}
+            >
+              {theme.heroTitle.split(' ').map((word, i) => (
+                <span key={i} className="block">{word}</span>
+              ))}
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              className="text-[16px] md:text-[18px] leading-relaxed max-w-[420px] mb-8"
+              style={{ color: '#5A5A5A' }}
+            >
+              {theme.heroSubtitle}
+            </p>
+
+            {/* CTA Button */}
+            <button
+              className="self-start px-8 py-3 rounded-lg text-[14px] font-medium transition-all hover:opacity-90"
+              style={{
+                backgroundColor: '#1A1A1A',
+                color: '#FFFFFF',
+              }}
+            >
+              Shop Now
+            </button>
+          </div>
+
+          {/* Right: Image with discount badge */}
+          <div className="flex-1 relative min-h-[300px] lg:min-h-[450px] w-full">
+            <img
+              src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&h=600&fit=crop"
+              alt="Beauty products"
+              className="absolute inset-0 w-full h-full object-cover object-center rounded-lg"
+            />
+            {/* Discount badge */}
+            <div
+              className="absolute top-4 right-4 md:top-8 md:right-8 w-20 h-20 md:w-28 md:h-28 rounded-full flex flex-col items-center justify-center"
+              style={{ backgroundColor: '#1A1A1A' }}
+            >
+              <span className="text-white text-[28px] md:text-[40px] font-bold leading-none">25%</span>
+              <span className="text-white text-[12px] md:text-[14px]">off</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // RedMarket style - solid color block overlaying image

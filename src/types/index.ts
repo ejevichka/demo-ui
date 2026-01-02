@@ -10,6 +10,7 @@ export interface ThemeConfig {
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
+  heroLabel?: string;
   isDark: boolean;
 }
 

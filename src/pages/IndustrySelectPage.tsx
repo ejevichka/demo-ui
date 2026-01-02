@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Zap, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { brandTokens } from '@/lib/themes';
 import type { ThemeName } from '@/types';
 
 interface Industry {
@@ -136,8 +135,6 @@ interface IndustryCardProps {
 }
 
 function IndustryCard({ industry, onClick }: IndustryCardProps) {
-  const tokens = brandTokens[industry.id];
-
   return (
     <button
       onClick={onClick}

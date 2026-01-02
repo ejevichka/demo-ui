@@ -6,8 +6,8 @@ export const brandTokens: Record<ThemeName, {
   primaryForeground: string;
 }> = {
   brainform: {
-    primary: '#541CF9',
-    primaryForeground: '#E7E6FE',
+    primary: '#C9A962',
+    primaryForeground: '#FFFFFF',
   },
   bluemarket: {
     primary: '#0048D9',
@@ -26,13 +26,14 @@ export const brandTokens: Record<ThemeName, {
 export const themes: Record<string, ThemeConfig> = {
   brainform: {
     id: 'brainform',
-    name: 'Brainform',
-    storeName: 'Brainform Store',
-    logoIcon: 'B',
-    navItems: ['Products', 'Solutions', 'Pricing', 'Resources', 'Company'],
-    heroTitle: 'AI-Powered Commerce',
-    heroSubtitle: 'Transform your shopping experience with intelligent assistance',
-    heroImage: '/hero-brainform.jpg',
+    name: 'ElysianGlow',
+    storeName: 'ElysianGlow',
+    logoIcon: 'EG',
+    navItems: ['Offers', 'Beauty Box', 'Brands', 'New In', 'Makeup', 'Hair', 'Skincare', 'Fragrance', "Men's", 'Body', 'Gifting', 'Luxury', 'Blog'],
+    heroTitle: '20% Off Favourites',
+    heroSubtitle: 'Shop the bestselling beauty of 2025 for less - featuring beauty, skincare, fragrance, and haircare heroes.',
+    heroImage: '/hero-beauty.jpg',
+    heroLabel: 'Flash sale',
     isDark: false,
   },
   bluemarket: {

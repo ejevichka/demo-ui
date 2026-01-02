@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, MoreHorizontal, CornerDownRight, PanelLeft, Send, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, CornerDownRight, PanelLeft, Send, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestions } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
@@ -26,7 +27,7 @@ export function AISearchBar() {
   // Focus input when expanded
   useEffect(() => {
     if (isExpanded && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isExpanded]);
 
@@ -41,13 +42,11 @@ export function AISearchBar() {
 
   const handleCollapse = () => {
     setIsExpanded(false);
-    // Don't clear messages on collapse - preserve chat history
   };
 
   const handleSend = async (text: string = inputValue) => {
     if (!text.trim() || isLoading) return;
 
-    // Expand if not already expanded
     if (!isExpanded) {
       setIsExpanded(true);
     }
@@ -60,7 +59,6 @@ export function AISearchBar() {
     const assistantMessage = createAssistantMessage('', true);
     setMessages((prev) => [...prev, assistantMessage]);
 
-    // Callbacks for streaming response
     const callbacks = {
       onChunk: (chunk: string) => {
         setMessages((prev) => {
@@ -100,7 +98,6 @@ export function AISearchBar() {
       },
     };
 
-    // Use real KRUPS API for brownmarket theme, mock for others
     if (themeName === 'brownmarket') {
       await sendKrupsMessage(text.trim(), callbacks);
     } else {
@@ -120,13 +117,11 @@ export function AISearchBar() {
   const handleNewChat = () => {
     setMessages([]);
     setInputValue('');
-    // Reset KRUPS session for new chat
     if (themeName === 'brownmarket') {
       resetKrupsSession();
     }
   };
 
-  // Get theme-specific assistant description
   const getAssistantDescription = () => {
     if (theme.id === 'brownmarket') {
       return 'Ask a question or describe what you are looking for, and I will help you find the best solution among KRUPS coffee machines.';
@@ -137,331 +132,271 @@ export function AISearchBar() {
     if (theme.id === 'bluemarket') {
       return 'Ask a question or describe what you are looking for, and I will help you find the best outdoor gear.';
     }
+    if (theme.id === 'brainform') {
+      return 'Ask a question about beauty, skincare, fragrance, or haircare products.';
+    }
     return 'Ask a question or describe what you are looking for, and I will help you find the best solution.';
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[843px] px-4">
-      <div
-        className="relative transition-all duration-300 ease-out"
-        style={{
-          backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
-          border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-          borderRadius: '16px',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Expanded content - slides up */}
-        <div
-          className="transition-all duration-300 ease-out overflow-hidden"
-          style={{
-            maxHeight: isExpanded ? '500px' : '0px',
-            opacity: isExpanded ? 1 : 0,
-          }}
-        >
-          {/* Header - only show title when no messages */}
-          {!hasMessages ? (
-            <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4">
-              <div className="flex items-center gap-3">
-                <button
-                  className="p-2 rounded-lg transition-colors hover:bg-black/5"
-                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-                >
-                  <PanelLeft className="w-5 h-5" />
-                </button>
-                <h2
-                  className="text-[28px] font-bold"
-                  style={{ color: 'var(--primary)' }}
-                >
-                  AI Smart assistant
-                </h2>
-              </div>
-            </div>
-          ) : (
-            /* When has messages - show only New chat button */
-            <div className="flex items-center justify-end px-6 pt-4 pb-2">
-              <button
-                onClick={handleNewChat}
-                className="text-[14px] px-3 py-1.5 rounded-lg transition-colors hover:opacity-70"
-                style={{
-                  color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)',
-                  backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                }}
-              >
-                New chat
-              </button>
-            </div>
-          )}
+    <>
+      {/* Backdrop blur when expanded */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-40"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.15)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            }}
+            onClick={handleCollapse}
+          />
+        )}
+      </AnimatePresence>
 
-          {/* Content area - either intro or chat messages */}
-          <div
-            className="overflow-y-auto"
-            style={{ maxHeight: '340px' }}
+      {/* Floating button (collapsed state) */}
+      <AnimatePresence>
+        {!isExpanded && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleExpand}
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+            style={{
+              backgroundColor: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+            }}
           >
-            {!hasMessages ? (
-              /* Initial state - description + suggested questions */
-              <>
-                <p
-                  className="px-6 pb-6 text-[16px] leading-relaxed"
-                  style={{ color: isDark ? 'var(--neutral-300)' : 'var(--neutral-900)' }}
-                >
-                  {getAssistantDescription()}
-                </p>
+            <ArrowUpRight className="w-6 h-6" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-                {/* Suggested questions */}
-                <div className="px-6 pb-6 space-y-4">
-                  {suggestedQuestions.map((q) => (
-                    <button
-                      key={q.id}
-                      onClick={() => handleSend(q.text)}
-                      className="flex items-start gap-3 w-full text-left transition-colors hover:opacity-70"
-                    >
-                      <CornerDownRight
-                        className="w-5 h-5 mt-0.5 flex-shrink-0"
-                        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                      />
-                      <span
-                        className="text-[18px] font-medium"
-                        style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-                      >
-                        {q.text}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              /* Chat messages */
-              <div className="px-6 pb-4 space-y-4">
-                {messages.map((message, index) => (
-                  <div
-                    key={message.id}
-                    style={{
-                      animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
-                    }}
-                  >
-                    <ChatMessage message={message} />
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-
-                {/* Follow-up suggestions after assistant response */}
-                {hasMessages && !isLoading && (
-                  <div className="pt-2">
-                    <p
-                      className="text-[12px] mb-2"
-                      style={{ color: 'var(--neutral-500)' }}
-                    >
-                      You might also be interested in
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedQuestions.slice(0, 3).map((q, index) => (
-                        <button
-                          key={q.id}
-                          onClick={() => handleSend(q.text)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] transition-all hover:scale-105"
-                          style={{
-                            backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                            color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                            animation: `fadeInUp 0.3s ease-out ${index * 0.1}s both`,
-                          }}
-                        >
-                          {q.text}
-                          <ArrowRight className="w-3 h-3 ml-1" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Input bar - always visible */}
-        <div className="px-4 lg:px-6 py-4 lg:py-5">
-          {/* Main row: icons (desktop) + input + send + voice */}
-          <div className="flex items-center gap-3 lg:gap-4">
-            {/* Left section: Menu dots + icons - only on desktop (>= 1000px) */}
-            <div className="hidden lg:flex items-center gap-4">
-              {!isExpanded && (
-                <>
+      {/* Chat panel (expanded state) */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 100 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-[560px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+                border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
+                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.2)',
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
+                <div className="flex items-center gap-3">
                   <button
-                    className="p-1 transition-colors hover:opacity-70"
-                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
+                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
                   >
-                    <MoreHorizontal
-                      className="w-5 h-5"
-                      style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                    />
+                    <PanelLeft className="w-5 h-5" />
                   </button>
-                  <div
-                    className="w-px h-6"
-                    style={{ backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-300)' }}
-                  />
-                </>
-              )}
-              <div className="flex items-center gap-3">
-                <Settings
-                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-                />
-                <ImageIcon
-                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-                />
-                <FileText
-                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-                />
-              </div>
-            </div>
-
-            {/* Center: Input */}
-            <div className="flex-1 flex items-center">
-              {isExpanded ? (
-                <div
-                  className="flex-1 flex items-center gap-2 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl"
-                  style={{
-                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                    border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--neutral-200)'}`,
-                  }}
-                >
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={hasMessages ? 'Ask a follow-up question...' : 'Ask me anything...'}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] lg:text-[16px]"
-                    style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-                    disabled={isLoading}
-                  />
-                  {inputValue && (
-                    <button
-                      onClick={() => setInputValue('')}
-                      className="p-1 rounded-full hover:bg-black/5 transition-colors"
+                  {!hasMessages && (
+                    <h2
+                      className="text-[20px] font-bold"
+                      style={{ color: 'var(--primary)' }}
                     >
-                      <X
-                        className="w-4 h-4"
-                        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                      />
+                      AI Smart assistant
+                    </h2>
+                  )}
+                  {hasMessages && (
+                    <button
+                      onClick={handleNewChat}
+                      className="text-[13px] px-3 py-1.5 rounded-lg transition-colors hover:opacity-70"
+                      style={{
+                        color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)',
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                      }}
+                    >
+                      New chat
                     </button>
                   )}
                 </div>
-              ) : (
-                <div
-                  onClick={handleExpand}
-                  className="flex-1 cursor-pointer"
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleCollapse}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                    color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
+                  }}
                 >
-                  <span
-                    className="text-[14px] lg:text-[16px]"
-                    style={{ color: 'var(--neutral-400)' }}
-                  >
-                    Ask me anything...
-                  </span>
-                </div>
-              )}
-            </div>
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
 
-            {/* Right section: Send button + Voice */}
-            <div className="flex items-center gap-2 lg:gap-3">
-              {/* Send button */}
-              <button
-                onClick={() => isExpanded ? handleSend() : handleExpand()}
-                disabled={isExpanded && isLoading}
-                className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-50"
-                style={{
-                  backgroundColor: isExpanded && inputValue.trim()
-                    ? 'var(--primary)'
-                    : isDark ? 'var(--neutral-700)' : 'var(--neutral-200)',
-                  color: isExpanded && inputValue.trim()
-                    ? '#FFFFFF'
-                    : isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
-                }}
+              {/* Content area */}
+              <div
+                className="overflow-y-auto px-5 py-4"
+                style={{ maxHeight: '400px' }}
               >
-                {isExpanded && hasMessages ? (
-                  <Send className="w-4 h-4 lg:w-5 lg:h-5" />
+                {!hasMessages ? (
+                  <>
+                    <p
+                      className="text-[15px] leading-relaxed mb-5"
+                      style={{ color: isDark ? 'var(--neutral-300)' : 'var(--neutral-700)' }}
+                    >
+                      {getAssistantDescription()}
+                    </p>
+
+                    {/* Suggested questions */}
+                    <div className="space-y-3">
+                      {suggestedQuestions.map((q, index) => (
+                        <motion.button
+                          key={q.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          onClick={() => handleSend(q.text)}
+                          className="flex items-start gap-3 w-full text-left transition-colors hover:opacity-70"
+                        >
+                          <CornerDownRight
+                            className="w-4 h-4 mt-1 flex-shrink-0"
+                            style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                          />
+                          <span
+                            className="text-[15px] font-medium"
+                            style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+                          >
+                            {q.text}
+                          </span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </>
                 ) : (
-                  <ArrowUp className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <div className="space-y-4">
+                    {messages.map((message, index) => (
+                      <motion.div
+                        key={message.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <ChatMessage message={message} />
+                      </motion.div>
+                    ))}
+                    <div ref={messagesEndRef} />
+
+                    {/* Follow-up suggestions */}
+                    {hasMessages && !isLoading && (
+                      <div className="pt-3">
+                        <p className="text-[11px] mb-2" style={{ color: 'var(--neutral-500)' }}>
+                          You might also be interested in
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestedQuestions.slice(0, 2).map((q, index) => (
+                            <motion.button
+                              key={q.id}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ scale: 1.03 }}
+                              onClick={() => handleSend(q.text)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px]"
+                              style={{
+                                backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                                color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                              }}
+                            >
+                              {q.text}
+                              <ArrowRight className="w-3 h-3 ml-1" />
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </button>
+              </div>
 
-              {/* Voice mode button */}
-              <button
-                className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl text-[13px] lg:text-[14px] font-medium transition-all hover:opacity-80"
-                style={{
-                  backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                  color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Mic className="w-4 h-4" />
-                <span className="hidden sm:inline">{isExpanded ? 'Voice mode' : 'Label'}</span>
-              </button>
+              {/* Input area */}
+              <div className="px-5 py-4 border-t" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
+                <div className="flex items-center gap-3">
+                  {/* Icons */}
+                  <div className="flex items-center gap-2">
+                    {[Settings, ImageIcon, FileText].map((Icon, i) => (
+                      <Icon
+                        key={i}
+                        className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Input */}
+                  <div
+                    className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                    style={{
+                      backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                      border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
+                    }}
+                  >
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ask me anything..."
+                      className="flex-1 bg-transparent border-none outline-none text-[14px]"
+                      style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  {/* Send button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleSend()}
+                    disabled={!inputValue.trim() || isLoading}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-50"
+                    style={{
+                      backgroundColor: inputValue.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
+                      color: inputValue.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
+                    }}
+                  >
+                    {hasMessages ? <Send className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+                  </motion.button>
+
+                  {/* Voice button */}
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
+                    style={{
+                      backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                      color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                    }}
+                  >
+                    <Mic className="w-4 h-4" />
+                    <span className="hidden sm:inline">Label</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Mobile icons row - below input (< 1000px) */}
-          <div className="flex lg:hidden items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}` }}>
-            <div className="flex items-center gap-4">
-              <Settings
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-              />
-              <ImageIcon
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-              />
-              <FileText
-                className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-              />
-            </div>
-            {!isExpanded && (
-              <button
-                className="p-1 transition-colors hover:opacity-70"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal
-                  className="w-5 h-5"
-                  style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Close button - only when expanded */}
-        {isExpanded && (
-          <button
-            onClick={handleCollapse}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
-            style={{
-              backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)',
-              color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
-            }}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          </motion.div>
         )}
-      </div>
-
-      {/* Animation keyframes */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
-    </div>
+      </AnimatePresence>
+    </>
   );
 }

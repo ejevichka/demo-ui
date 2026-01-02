@@ -28,21 +28,27 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 24px;
+  --radius-3xl: 32px;
   --radius-full: 999px;
+
+  /* Liquid Glass Design Tokens (2025+) */
+  --blur-glass: 20px;
+  --blur-glass-heavy: 40px;
+  --blur-glass-light: 12px;
 }
 
-/* Base theme (Brainform - default) */
+/* Base theme (ElysianGlow Beauty - default) */
 :root {
-  /* Brand colors */
-  --brand-100: #E7E6FE;
-  --brand-200: #D2CEFD;
-  --brand-300: #B2A6FC;
-  --brand-400: #977BEC;
-  --brand-500: #6939F9;
-  --brand-600: #541CF9;
-  --brand-700: #3703D3;
-  --brand-800: #2A00A7;
-  --brand-900: #1E0177;
+  /* Brand colors - Gold/Bronze for beauty */
+  --brand-100: #F7F3E8;
+  --brand-200: #EDE5D0;
+  --brand-300: #DDD0A8;
+  --brand-400: #D4C08A;
+  --brand-500: #C9A962;
+  --brand-600: #B89545;
+  --brand-700: #9A7A38;
+  --brand-800: #7C612B;
+  --brand-900: #5E481E;
 
   /* Neutral colors */
   --neutral-0: #FAFAFF;
@@ -95,6 +101,16 @@
   /* Dark mode support */
   --surface-dark: var(--neutral-900);
   --text-dark: var(--neutral-100);
+
+  /* Liquid Glass Effects */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-dark: rgba(23, 20, 33, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-dark: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-shadow-heavy: 0 32px 64px rgba(0, 0, 0, 0.25);
+  --glass-glow: 0 0 40px rgba(84, 28, 249, 0.15);
 }
 
 /* BlueMarket Theme */
@@ -275,4 +291,97 @@ body {
 
 .chat-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--neutral-400);
+}
+
+/* ========================================
+   Liquid Glass Utilities (2025+)
+   ======================================== */
+
+/* Base glass panel */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-dark {
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--glass-border-dark);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Heavy blur glass (main containers) */
+.glass-heavy {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-glass-heavy));
+  -webkit-backdrop-filter: blur(var(--blur-glass-heavy));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-heavy);
+}
+
+.glass-heavy-dark {
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--blur-glass-heavy));
+  -webkit-backdrop-filter: blur(var(--blur-glass-heavy));
+  border: 1px solid var(--glass-border-dark);
+  box-shadow: var(--glass-shadow-heavy);
+}
+
+/* Specular highlight overlay */
+.glass-highlight {
+  position: relative;
+}
+
+.glass-highlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    var(--glass-highlight) 0%,
+    transparent 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Nested glass (sidebar, cards inside modal) */
+.glass-nested {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(var(--blur-glass-light));
+  -webkit-backdrop-filter: blur(var(--blur-glass-light));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-nested-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(var(--blur-glass-light));
+  -webkit-backdrop-filter: blur(var(--blur-glass-light));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Glow effect on focus/hover */
+.glass-glow:focus-within,
+.glass-glow:hover {
+  box-shadow: var(--glass-shadow), var(--glass-glow);
+}
+
+/* Liquid overlay for modals */
+.liquid-overlay {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* SVG Liquid Refraction Filter */
+.liquid-filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
