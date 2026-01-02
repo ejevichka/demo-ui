@@ -186,19 +186,20 @@ export function AISearchBar() {
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 100 }}
+            initial={{ opacity: 0, scale: 0.95, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 50 }}
+            exit={{ opacity: 0, scale: 0.95, y: 30 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-[560px]"
+            className="fixed z-50 inset-4 md:inset-auto md:bottom-6 md:right-6 md:w-[560px] md:max-h-[80vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="relative rounded-2xl overflow-hidden"
+              className="relative rounded-2xl overflow-hidden h-full md:h-auto flex flex-col"
               style={{
                 backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
                 border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
                 boxShadow: '0 24px 64px rgba(0, 0, 0, 0.2)',
+                maxHeight: 'calc(100vh - 32px)',
               }}
             >
               {/* Header */}
@@ -247,8 +248,8 @@ export function AISearchBar() {
 
               {/* Content area */}
               <div
-                className="overflow-y-auto px-5 py-4"
-                style={{ maxHeight: '400px' }}
+                className="flex-1 overflow-y-auto px-5 py-4"
+                style={{ minHeight: 0 }}
               >
                 {!hasMessages ? (
                   <>
@@ -332,7 +333,8 @@ export function AISearchBar() {
 
               {/* Input area */}
               <div className="px-5 py-4 border-t" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
-                <div className="flex items-center gap-3">
+                {/* Desktop: Icons + Input + Send in one row */}
+                <div className="hidden md:flex items-center gap-3">
                   {/* Icons */}
                   <div className="flex items-center gap-2">
                     {[Settings, ImageIcon, FileText].map((Icon, i) => (
@@ -389,8 +391,71 @@ export function AISearchBar() {
                     }}
                   >
                     <Mic className="w-4 h-4" />
-                    <span className="hidden sm:inline">Label</span>
+                    <span>Label</span>
                   </button>
+                </div>
+
+                {/* Mobile: Input row + Icons row below */}
+                <div className="flex md:hidden flex-col gap-3">
+                  {/* Input row */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
+                      }}
+                    >
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Ask me anything..."
+                        className="flex-1 bg-transparent border-none outline-none text-[15px]"
+                        style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Send button */}
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleSend()}
+                      disabled={!inputValue.trim() || isLoading}
+                      className="w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-50"
+                      style={{
+                        backgroundColor: inputValue.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
+                        color: inputValue.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
+                      }}
+                    >
+                      {hasMessages ? <Send className="w-5 h-5" /> : <ArrowUp className="w-5 h-5" />}
+                    </motion.button>
+                  </div>
+
+                  {/* Icons row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {[Settings, ImageIcon, FileText].map((Icon, i) => (
+                        <Icon
+                          key={i}
+                          className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
+                          style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                      }}
+                    >
+                      <Mic className="w-4 h-4" />
+                      <span>Label</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

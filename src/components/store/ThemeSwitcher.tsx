@@ -15,7 +15,7 @@ export function ThemeSwitcher() {
 
   return (
     <div
-      className="fixed top-20 right-4 z-50 flex flex-col gap-1 p-2 rounded-xl shadow-lg"
+      className="fixed top-4 md:top-20 right-4 z-30 flex flex-col gap-1 p-2 rounded-xl shadow-lg"
       style={{
         backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
         border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
