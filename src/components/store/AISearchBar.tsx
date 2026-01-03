@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, CornerDownRight, PanelLeft, Send, ArrowRight, Sparkles } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { suggestedQuestions } from '@/lib/themes';
+import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
 import {
   sendChatMessageMock,
@@ -10,6 +10,7 @@ import {
   createAssistantMessage,
 } from '@/lib/api';
 import { sendKrupsMessage, resetSession as resetKrupsSession } from '@/lib/krupsApi';
+import { sendBluemarketMessage, resetBluemarketSession } from '@/lib/bluemarketApi';
 import type { ChatMessage as ChatMessageType } from '@/types';
 
 // Liquid Glass 2025+ Animation Configuration
@@ -49,6 +50,7 @@ export function AISearchBar() {
   const isCollapsed = stage === 'collapsed';
   const isInputBar = stage === 'inputBar';
   const isExpanded = stage === 'expanded';
+  const suggestedQuestions = suggestedQuestionsByTheme[themeName] || suggestedQuestionsByTheme.brownmarket;
 
   // Listen for openAIChat event from AI Agent button
   useEffect(() => {
@@ -165,6 +167,8 @@ export function AISearchBar() {
 
     if (themeName === 'brownmarket') {
       await sendKrupsMessage(text.trim(), callbacks);
+    } else if (themeName === 'bluemarket') {
+      await sendBluemarketMessage(text.trim(), callbacks);
     } else {
       await sendChatMessageMock({ message: text, theme: themeName }, callbacks);
     }
@@ -184,6 +188,8 @@ export function AISearchBar() {
     setInputValue('');
     if (themeName === 'brownmarket') {
       resetKrupsSession();
+    } else if (themeName === 'bluemarket') {
+      resetBluemarketSession();
     }
   };
 
@@ -209,6 +215,7 @@ export function AISearchBar() {
                       theme.id === 'brainform' ? '184, 149, 69' : '195, 0, 0';
 
   // Animation dimensions for each stage
+  // Use dvh (dynamic viewport height) for Safari iOS compatibility
   const stageStyles = {
     collapsed: {
       width: 56,
@@ -222,7 +229,7 @@ export function AISearchBar() {
     },
     expanded: {
       width: 'min(782px, calc(100vw - 32px))',
-      height: 'min(532px, calc(100vh - 32px))',
+      height: 'min(532px, calc(100dvh - 120px))',
       borderRadius: 12,
     },
   };
@@ -270,7 +277,8 @@ export function AISearchBar() {
         style={{
           // Position changes based on stage
           // Collapsed: bottom-right, Others: horizontally centered via Tailwind classes
-          bottom: 24,
+          // Use safe-area-inset for iOS notch/home indicator
+          bottom: isExpanded ? 'max(16px, env(safe-area-inset-bottom))' : 24,
           ...(isCollapsed ? { right: 24 } : {}),
         }}
         initial={false}

@@ -20,7 +20,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/" element={
+          <ThemeProvider defaultTheme="brainform">
+            <LoginPage />
+          </ThemeProvider>
+        } />
         <Route path="/select" element={<IndustrySelectPage />} />
         <Route path="/demo/:industry" element={<StorePageWrapper />} />
       </Routes>

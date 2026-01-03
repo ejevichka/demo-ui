@@ -71,12 +71,35 @@ export const themes: Record<string, ThemeConfig> = {
   },
 };
 
-export const suggestedQuestions: SuggestedQuestion[] = [
-  { id: '1', text: 'How to choose a coffee machine for home?' },
-  { id: '2', text: 'What is the difference between automatic and capsule machines?' },
-  { id: '3', text: 'Compare KRUPS Essential and KRUPS Intuition' },
-  { id: '4', text: 'How to properly maintain a coffee machine?' },
-];
+export const suggestedQuestionsByTheme: Record<ThemeName, SuggestedQuestion[]> = {
+  brownmarket: [
+    { id: '1', text: 'How to choose a coffee machine for home?' },
+    { id: '2', text: 'What is the difference between automatic and capsule machines?' },
+    { id: '3', text: 'Compare KRUPS Essential and KRUPS Intuition' },
+    { id: '4', text: 'How to properly maintain a coffee machine?' },
+  ],
+  bluemarket: [
+    { id: '1', text: 'How to choose running shoes?' },
+    { id: '2', text: 'What equipment do I need for hiking?' },
+    { id: '3', text: 'Best workout gear for beginners?' },
+    { id: '4', text: 'How to choose a tent for camping?' },
+  ],
+  redmarket: [
+    { id: '1', text: 'How to choose a laptop for work?' },
+    { id: '2', text: 'What is the difference between OLED and LED TV?' },
+    { id: '3', text: 'Best smartphone under $500?' },
+    { id: '4', text: 'How to set up a home theater system?' },
+  ],
+  brainform: [
+    { id: '1', text: 'How to build a skincare routine?' },
+    { id: '2', text: 'Best moisturizers for dry skin?' },
+    { id: '3', text: 'How to choose the right foundation shade?' },
+    { id: '4', text: 'What are the trending fragrances this season?' },
+  ],
+};
+
+// Default export for backward compatibility
+export const suggestedQuestions = suggestedQuestionsByTheme.brownmarket;
 
 export const mockProducts: Product[] = [
   {

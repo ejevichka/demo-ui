@@ -15,9 +15,30 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/krups-api': {
-        target: 'https://ai-search-api-krups-production.containerapps.ru',
+        target: 'https://api-g3d23mkdnq-ew.a.run.app',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/krups-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[VITE PROXY KRUPS] >>> ', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('[VITE PROXY KRUPS] <<<', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+      '/bluemarket-api': {
+        target: 'https://api-5snp6apu6a-ew.a.run.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/bluemarket-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[VITE PROXY BLUEMARKET] >>> ', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('[VITE PROXY BLUEMARKET] <<<', proxyRes.statusCode, req.url);
+          });
+        },
       },
     },
   },
