@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, CornerDownRight, PanelLeft, Send, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, CornerDownRight, PanelLeft, Send, ArrowRight, Sparkles } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestions } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
@@ -12,43 +12,108 @@ import {
 import { sendKrupsMessage, resetSession as resetKrupsSession } from '@/lib/krupsApi';
 import type { ChatMessage as ChatMessageType } from '@/types';
 
+// Liquid Glass 2025+ Animation Configuration
+const SLIDE_DURATION = 1.0; // Stage 1: button → inputBar (slower, premium feel)
+const MORPH_DURATION = 0.7; // Stage 2: inputBar → expanded
+
+const SPRING_SLIDE = {
+  type: 'spring' as const,
+  damping: 35,
+  stiffness: 100,
+  mass: 1.2,
+};
+
+const SPRING_MORPH = {
+  type: 'spring' as const,
+  damping: 25,
+  stiffness: 120,
+  mass: 1,
+};
+
+// Three-stage animation states
+type ChatStage = 'collapsed' | 'inputBar' | 'expanded';
+
 export function AISearchBar() {
   const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [stage, setStage] = useState<ChatStage>('collapsed');
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputBarRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const hasMessages = messages.length > 0;
+  const isCollapsed = stage === 'collapsed';
+  const isInputBar = stage === 'inputBar';
+  const isExpanded = stage === 'expanded';
 
-  // Focus input when expanded
+  // Listen for openAIChat event from AI Agent button
   useEffect(() => {
-    if (isExpanded && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 300);
+    const handleOpenChat = () => setStage('inputBar');
+    window.addEventListener('openAIChat', handleOpenChat);
+    return () => window.removeEventListener('openAIChat', handleOpenChat);
+  }, []);
+
+  // Focus input when stage changes
+  useEffect(() => {
+    if (isInputBar && inputBarRef.current) {
+      setTimeout(() => inputBarRef.current?.focus(), SLIDE_DURATION * 500);
     }
-  }, [isExpanded]);
+    if (isExpanded && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), MORPH_DURATION * 400);
+    }
+  }, [stage, isInputBar, isExpanded]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleExpand = () => {
-    setIsExpanded(true);
+  // Click outside to close (simplified dependency)
+  useEffect(() => {
+    if (stage === 'collapsed') return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setStage(stage === 'expanded' ? 'inputBar' : 'collapsed');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [stage]);
+
+  const handleButtonClick = () => {
+    setStage('inputBar');
+  };
+
+  const handleInputFocus = () => {
+    if (isInputBar) {
+      setStage('expanded');
+    }
   };
 
   const handleCollapse = () => {
-    setIsExpanded(false);
+    if (isExpanded) {
+      setStage('inputBar');
+    } else {
+      setStage('collapsed');
+    }
+  };
+
+  const handleFullClose = () => {
+    setStage('collapsed');
   };
 
   const handleSend = async (text: string = inputValue) => {
     if (!text.trim() || isLoading) return;
 
-    if (!isExpanded) {
-      setIsExpanded(true);
+    // Expand to full window when sending from inputBar
+    if (stage !== 'expanded') {
+      setStage('expanded');
     }
 
     const userMessage = createUserMessage(text.trim());
@@ -138,68 +203,255 @@ export function AISearchBar() {
     return 'Ask a question or describe what you are looking for, and I will help you find the best solution.';
   };
 
+  // Calculate glow color based on theme
+  const primaryGlow = theme.id === 'brownmarket' ? '255, 107, 0' :
+                      theme.id === 'bluemarket' ? '0, 72, 217' :
+                      theme.id === 'brainform' ? '184, 149, 69' : '195, 0, 0';
+
+  // Animation dimensions for each stage
+  const stageStyles = {
+    collapsed: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+    },
+    inputBar: {
+      width: 'min(600px, calc(100vw - 48px))',
+      height: 56,
+      borderRadius: 28,
+    },
+    expanded: {
+      width: 'min(782px, calc(100vw - 32px))',
+      height: 'min(532px, calc(100vh - 32px))',
+      borderRadius: 12,
+    },
+  };
+
   return (
-    <>
-      {/* Backdrop blur when expanded */}
+    <LayoutGroup>
+      {/* Backdrop blur - only for expanded state */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{
+              opacity: 1,
+              backdropFilter: 'blur(20px)',
+              transition: {
+                opacity: { duration: MORPH_DURATION * 0.5, ease: 'easeOut' },
+                backdropFilter: { duration: MORPH_DURATION, ease: [0.22, 1, 0.36, 1] }
+              }
+            }}
+            exit={{
+              opacity: 0,
+              backdropFilter: 'blur(0px)',
+              transition: {
+                opacity: { duration: MORPH_DURATION * 0.3 },
+                backdropFilter: { duration: MORPH_DURATION * 0.5 }
+              }
+            }}
             className="fixed inset-0 z-40"
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.15)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              WebkitBackdropFilter: 'blur(20px)',
             }}
-            onClick={handleCollapse}
+            onClick={() => setStage('inputBar')}
           />
         )}
       </AnimatePresence>
 
-      {/* Floating button (collapsed state) */}
-      <AnimatePresence>
-        {!isExpanded && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleExpand}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
-            style={{
-              backgroundColor: 'var(--primary)',
-              color: 'var(--primary-foreground)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <ArrowUpRight className="w-6 h-6" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Main morphing container */}
+      <motion.div
+        ref={containerRef}
+        layout
+        layoutId="ai-chat-morph"
+        className={`fixed z-50 overflow-hidden ${isCollapsed ? 'cursor-pointer' : ''} ${!isCollapsed ? 'left-1/2 -translate-x-1/2' : ''}`}
+        onClick={isCollapsed ? handleButtonClick : undefined}
+        style={{
+          // Position changes based on stage
+          // Collapsed: bottom-right, Others: horizontally centered via Tailwind classes
+          bottom: 24,
+          ...(isCollapsed ? { right: 24 } : {}),
+        }}
+        initial={false}
+        animate={{
+          ...stageStyles[stage],
+          boxShadow: isExpanded
+            ? `0 32px 64px rgba(0, 0, 0, 0.25), 0 0 80px rgba(${primaryGlow}, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)`
+            : isInputBar
+            ? `0 16px 48px rgba(0, 0, 0, 0.2), 0 0 40px rgba(${primaryGlow}, 0.15)`
+            : `0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0px rgba(${primaryGlow}, 0)`,
+        }}
+        whileHover={isCollapsed ? {
+          scale: 1.1,
+          boxShadow: `0 12px 40px rgba(0, 0, 0, 0.25), 0 0 30px rgba(${primaryGlow}, 0.4)`,
+        } : undefined}
+        whileTap={isCollapsed ? { scale: 0.95 } : undefined}
+        transition={{
+          layout: isExpanded ? SPRING_MORPH : SPRING_SLIDE,
+          boxShadow: {
+            duration: isExpanded ? MORPH_DURATION : SLIDE_DURATION,
+            ease: [0.22, 1, 0.36, 1] as const,
+          },
+        }}
+      >
+        {/* Specular Highlight - slides across during stage transitions */}
+        <AnimatePresence>
+          {(isInputBar || isExpanded) && (
+            <motion.div
+              className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                key={stage}
+                className="absolute inset-0 w-[30%]"
+                style={{
+                  background: `linear-gradient(
+                    105deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.12) 45%,
+                    rgba(255, 255, 255, 0.25) 50%,
+                    rgba(255, 255, 255, 0.12) 55%,
+                    transparent 100%
+                  )`,
+                }}
+                initial={{ x: '-100%', opacity: 0 }}
+                animate={{
+                  x: '400%',
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  duration: isExpanded ? MORPH_DURATION * 1.2 : SLIDE_DURATION * 1.2,
+                  ease: [0.22, 1, 0.36, 1] as const,
+                  delay: 0.1,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Chat panel (expanded state) */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 30 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed z-50 inset-4 md:inset-auto md:bottom-6 md:right-6 md:w-[560px] md:max-h-[80vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="relative rounded-2xl overflow-hidden h-full md:h-auto flex flex-col"
+        {/* Content based on stage */}
+        <AnimatePresence mode="wait">
+          {isCollapsed && (
+            // Stage 1: Button
+            <motion.div
+              key="button-content"
+              className="w-full h-full flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.12 } }}
+              transition={{ duration: 0.2, delay: 0.05 }}
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: 'var(--primary-foreground)',
+              }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-6 h-6" />
+              </motion.div>
+            </motion.div>
+          )}
+
+          {isInputBar && (
+            // Stage 2: Input Bar only - slides from right to left
+            <motion.div
+              key="inputbar-content"
+              className="w-full h-full flex items-center gap-3 px-4"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50, transition: { duration: 0.2 } }}
+              transition={{
+                opacity: { duration: 0.3, delay: SLIDE_DURATION * 0.2 },
+                x: { ...SPRING_SLIDE, delay: SLIDE_DURATION * 0.1 }
+              }}
               style={{
                 backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
                 border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
-                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.2)',
-                maxHeight: 'calc(100vh - 32px)',
+                borderRadius: 28,
+              }}
+            >
+              {/* AI Icon */}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              >
+                <Sparkles className="w-4 h-4" />
+              </div>
+
+              {/* Input */}
+              <input
+                ref={inputBarRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onFocus={handleInputFocus}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask AI anything..."
+                className="flex-1 bg-transparent border-none outline-none text-[14px]"
+                style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+              />
+
+              {/* Send button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSend()}
+                disabled={!inputValue.trim()}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
+                style={{
+                  backgroundColor: inputValue.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
+                  color: inputValue.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
+                }}
+              >
+                <ArrowUp className="w-4 h-4" />
+              </motion.button>
+
+              {/* Close button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleFullClose}
+                className="w-7 h-7 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                  color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
+                }}
+              >
+                <X className="w-3.5 h-3.5" />
+              </motion.button>
+            </motion.div>
+          )}
+
+          {isExpanded && (
+            // Stage 3: Full chat panel
+            <motion.div
+              key="panel-content"
+              className="w-full h-full flex flex-col"
+              initial={{ opacity: 0, filter: 'blur(8px)' }}
+              animate={{
+                opacity: 1,
+                filter: 'blur(0px)',
+                transition: {
+                  opacity: { duration: MORPH_DURATION * 0.5, delay: MORPH_DURATION * 0.2 },
+                  filter: { duration: MORPH_DURATION * 0.4, delay: MORPH_DURATION * 0.3 }
+                }
+              }}
+              exit={{
+                opacity: 0,
+                filter: 'blur(4px)',
+                transition: { duration: 0.15 }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+                border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
+                borderRadius: 12,
               }}
             >
               {/* Header */}
@@ -458,10 +710,10 @@ export function AISearchBar() {
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </LayoutGroup>
   );
 }

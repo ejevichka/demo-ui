@@ -63,7 +63,8 @@ export function StoreHeader() {
 
           {/* Center: AI Agent Button */}
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('openAIChat'))}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
             style={{
               backgroundColor: theme.isDark ? '#FFFFFF' : 'var(--neutral-900)',
               color: theme.isDark ? 'var(--neutral-900)' : '#FFFFFF',
