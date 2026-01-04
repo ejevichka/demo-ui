@@ -216,6 +216,7 @@ export function AISearchBar() {
 
   // Animation dimensions for each stage
   // Use dvh (dynamic viewport height) for Safari iOS compatibility
+  // Use smaller margins on mobile to prevent overflow
   const stageStyles = {
     collapsed: {
       width: 56,
@@ -223,13 +224,13 @@ export function AISearchBar() {
       borderRadius: 28,
     },
     inputBar: {
-      width: 'min(600px, calc(100vw - 48px))',
+      width: 'min(600px, calc(100vw - 32px))',
       height: 56,
       borderRadius: 28,
     },
     expanded: {
-      width: 'min(782px, calc(100vw - 32px))',
-      height: 'min(532px, calc(100dvh - 120px))',
+      width: 'min(782px, calc(100vw - 16px))',
+      height: 'min(532px, calc(100dvh - 100px))',
       borderRadius: 12,
     },
   };
