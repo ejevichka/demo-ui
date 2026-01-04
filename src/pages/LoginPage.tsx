@@ -166,7 +166,6 @@ export function LoginPage() {
               style={{ backgroundColor: 'var(--primary)' }}
             >
               <ArrowRight className="w-5 h-5" />
-              Title
             </button>
           </form>
         </div>

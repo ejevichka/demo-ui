@@ -34,17 +34,58 @@ const SPRING_MORPH = {
 // Three-stage animation states
 type ChatStage = 'collapsed' | 'inputBar' | 'expanded';
 
+// Store chat state per theme
+type ThemeChatState = {
+  messages: ChatMessageType[];
+  inputValue: string;
+};
+
 export function AISearchBar() {
   const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
   const [stage, setStage] = useState<ChatStage>('collapsed');
-  const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Per-theme chat state
+  const [chatStateByTheme, setChatStateByTheme] = useState<Record<string, ThemeChatState>>({});
+  const prevThemeRef = useRef(themeName);
+
+  // Get current theme's chat state
+  const currentChatState = chatStateByTheme[themeName] || { messages: [], inputValue: '' };
+  const messages = currentChatState.messages;
+  const inputValue = currentChatState.inputValue;
+
+  // Update input value for current theme
+  const setInputValue = (value: string) => {
+    setChatStateByTheme(prev => ({
+      ...prev,
+      [themeName]: { ...prev[themeName], messages: prev[themeName]?.messages || [], inputValue: value }
+    }));
+  };
+
+  // Update messages for current theme
+  const setMessages = (updater: ChatMessageType[] | ((prev: ChatMessageType[]) => ChatMessageType[])) => {
+    setChatStateByTheme(prev => {
+      const currentMessages = prev[themeName]?.messages || [];
+      const newMessages = typeof updater === 'function' ? updater(currentMessages) : updater;
+      return {
+        ...prev,
+        [themeName]: { ...prev[themeName], inputValue: prev[themeName]?.inputValue || '', messages: newMessages }
+      };
+    });
+  };
+
+  // Reset loading state when theme changes
+  useEffect(() => {
+    if (prevThemeRef.current !== themeName) {
+      setIsLoading(false);
+      prevThemeRef.current = themeName;
+    }
+  }, [themeName]);
 
   const hasMessages = messages.length > 0;
   const isCollapsed = stage === 'collapsed';
@@ -652,7 +693,6 @@ export function AISearchBar() {
                     }}
                   >
                     <Mic className="w-4 h-4" />
-                    <span>Label</span>
                   </button>
                 </div>
 
@@ -714,7 +754,6 @@ export function AISearchBar() {
                       }}
                     >
                       <Mic className="w-4 h-4" />
-                      <span>Label</span>
                     </button>
                   </div>
                 </div>

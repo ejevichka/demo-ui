@@ -27,6 +27,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
   }
 
   // Assistant message
+  const showLoader = message.isStreaming && !message.content;
+
   return (
     <div className="flex justify-start">
       <div
@@ -39,8 +41,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
         }}
       >
         <div className="text-[14px] leading-[1.7]">
-          <FormattedMessage content={message.content} isDark={isDark} products={message.products} />
-          {message.isStreaming && <StreamingCursor />}
+          {showLoader ? (
+            <TypingIndicator />
+          ) : (
+            <>
+              <FormattedMessage content={message.content} isDark={isDark} products={message.products} />
+              {message.isStreaming && <StreamingCursor />}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -53,6 +61,37 @@ function StreamingCursor() {
       className="inline-block w-[2px] h-[18px] ml-0.5 rounded-full animate-pulse"
       style={{ backgroundColor: 'var(--primary)' }}
     />
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 py-1">
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{
+          backgroundColor: 'var(--primary)',
+          animationDelay: '0ms',
+          animationDuration: '600ms',
+        }}
+      />
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{
+          backgroundColor: 'var(--primary)',
+          animationDelay: '150ms',
+          animationDuration: '600ms',
+        }}
+      />
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{
+          backgroundColor: 'var(--primary)',
+          animationDelay: '300ms',
+          animationDuration: '600ms',
+        }}
+      />
+    </div>
   );
 }
 
