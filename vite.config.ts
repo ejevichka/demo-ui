@@ -19,7 +19,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/krups-api/, ''),
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
+          proxy.on('proxyReq', (_proxyReq, req) => {
             console.log('[VITE PROXY KRUPS] >>> ', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req) => {
@@ -32,7 +32,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/bluemarket-api/, ''),
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
+          proxy.on('proxyReq', (_proxyReq, req) => {
             console.log('[VITE PROXY BLUEMARKET] >>> ', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req) => {
