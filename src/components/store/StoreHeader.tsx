@@ -59,20 +59,20 @@ export function StoreHeader() {
               <GridIcon color={theme.isDark ? '#FFFFFF' : 'var(--primary)'} />
               <span className="hidden lg:inline">Menu</span>
             </button>
-          </div>
 
-          {/* Center: AI Agent Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('openAIChat'))}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
-            style={{
-              backgroundColor: theme.isDark ? '#FFFFFF' : 'var(--neutral-900)',
-              color: theme.isDark ? 'var(--neutral-900)' : '#FFFFFF',
-            }}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden sm:inline">AI Agent</span>
-          </button>
+            {/* AI Agent Button */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('openAIChat'))}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+              style={{
+                backgroundColor: theme.isDark ? '#FFFFFF' : 'var(--neutral-900)',
+                color: theme.isDark ? 'var(--neutral-900)' : '#FFFFFF',
+              }}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Agent</span>
+            </button>
+          </div>
 
           {/* Right: Search + Icons */}
           <div className="flex items-center gap-2">
