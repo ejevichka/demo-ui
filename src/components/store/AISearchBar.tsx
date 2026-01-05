@@ -44,12 +44,13 @@ type ThemeChatState = {
 export function AISearchBar() {
   const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
-  const [stage, setStage] = useState<ChatStage>('collapsed');
+  const [stage, setStage] = useState<ChatStage>('inputBar');
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevStageRef = useRef<ChatStage | null>(null);
 
   // Per-theme chat state
   const [chatStateByTheme, setChatStateByTheme] = useState<Record<string, ThemeChatState>>({});
@@ -101,14 +102,21 @@ export function AISearchBar() {
     return () => window.removeEventListener('openAIChat', handleOpenChat);
   }, []);
 
-  // Focus input when stage changes
+  // Focus input when stage changes (only on actual transitions, not initial mount)
   useEffect(() => {
-    if (isInputBar && inputBarRef.current) {
+    const wasCollapsed = prevStageRef.current === 'collapsed';
+    const wasInputBar = prevStageRef.current === 'inputBar';
+
+    // Only auto-focus when transitioning FROM collapsed TO inputBar
+    if (isInputBar && wasCollapsed && inputBarRef.current) {
       setTimeout(() => inputBarRef.current?.focus(), SLIDE_DURATION * 500);
     }
-    if (isExpanded && inputRef.current) {
+    // Auto-focus when expanding
+    if (isExpanded && wasInputBar && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), MORPH_DURATION * 400);
     }
+
+    prevStageRef.current = stage;
   }, [stage, isInputBar, isExpanded]);
 
   // Scroll to bottom when new messages arrive

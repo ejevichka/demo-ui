@@ -83,7 +83,7 @@ function BeautyHero() {
           {/* Right: Image with discount badge */}
           <div className="flex-1 relative min-h-[300px] lg:min-h-[450px] w-full">
             <img
-              src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&h=600&fit=crop"
+              src="/cream.webp"
               alt="Beauty products"
               className="absolute inset-0 w-full h-full object-cover object-center rounded-lg"
             />
@@ -195,7 +195,7 @@ function SplitHero() {
         {/* Right: Image */}
         <div className="flex-1 relative min-h-[280px] lg:min-h-0">
           <img
-            src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop"
+            src="/sport.webp"
             alt="Adventure"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -218,7 +218,7 @@ function DarkHero() {
       <div
         className="absolute inset-0 bg-cover bg-center opacity-50"
         style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&h=600&fit=crop)`,
+          backgroundImage: `url(/coffee.jpg)`,
         }}
       />
 

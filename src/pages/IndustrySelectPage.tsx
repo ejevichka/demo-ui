@@ -14,17 +14,17 @@ const industries: Industry[] = [
   {
     id: 'brownmarket',
     title: 'Electronics',
-    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=640&h=960&fit=crop', // Coffee machine
+    image: '/coffee.jpg',
   },
   {
     id: 'bluemarket',
     title: 'Sport and outdoor',
-    image: '/cf441d691ac404471b92cf344dc2349a8436a6f1.png', // Cyclist
+    image: '/sport.webp',
   },
   {
     id: 'brainform',
     title: 'Beauty and cosmetic',
-    image: '/Image.png', // Woman
+    image: '/cream.webp',
   },
 ];
 

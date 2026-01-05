@@ -186,6 +186,24 @@
   border-color: var(--border);
 }
 
+/* Remove default browser focus outlines */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus {
+  outline: none;
+}
+
+/* Remove tap highlight on mobile */
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
