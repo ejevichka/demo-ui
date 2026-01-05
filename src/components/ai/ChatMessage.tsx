@@ -244,11 +244,11 @@ function ProductModal({ name, url: _url, price, oldPrice, imageUrl, isDark, desc
         </button>
 
         {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden flex-shrink-0">
+        <div className="relative aspect-[4/3] overflow-hidden flex-shrink-0 bg-neutral-100">
           <img
             src={imageUrl}
             alt={name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
           {hasDiscount && (
             <div
