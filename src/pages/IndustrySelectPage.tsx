@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Zap, Code } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ThemeName } from '@/types';
 
@@ -13,8 +13,8 @@ interface Industry {
 const industries: Industry[] = [
   {
     id: 'brownmarket',
-    title: 'Consumer electronics',
-    image: '/f13b804b9fdc71c6c8e039107401e942fa3be9d5.png', // Watch
+    title: 'Electronics',
+    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=640&h=960&fit=crop', // Coffee machine
   },
   {
     id: 'bluemarket',
@@ -49,13 +49,13 @@ export function IndustrySelectPage() {
               className="text-[11px] sm:text-[12px] uppercase tracking-[0.1em]"
               style={{ color: '#AAA6B3' }}
             >
-              Title
+              Product Demo
             </span>
             <h1
               className="text-[28px] sm:text-[36px] md:text-[48px] font-bold mt-2"
               style={{ color: '#1A1726' }}
             >
-              Choose Your Adventure
+              Choose industry
             </h1>
           </div>
 
@@ -89,38 +89,16 @@ export function IndustrySelectPage() {
             </span>
           </div>
 
-          {/* Center & Right */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-[24px]">
-            {/* Developer console - hidden on mobile, visible on tablet+ */}
-            <div className="hidden md:flex items-center gap-2">
-              <Code
-                className="w-4 h-4"
-                style={{ color: '#5A5763' }}
-              />
-              <span
-                className="text-[14px]"
-                style={{ color: '#5A5763' }}
-              >
-                Developer console
-              </span>
-              <span
-                className="text-[12px] hidden lg:inline"
-                style={{ color: '#AAA6B3' }}
-              >
-                Asset the Brainform backend to configure agents and view analytics.
-              </span>
-            </div>
-
-            {/* Label button */}
+          {/* Right */}
+          <div className="flex items-center">
             <button
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium"
+              className="flex items-center justify-center w-10 h-10 rounded-full"
               style={{
                 backgroundColor: '#541CF9',
                 color: '#FFFFFF',
               }}
             >
               <Zap className="w-4 h-4" />
-              Label
             </button>
           </div>
         </div>

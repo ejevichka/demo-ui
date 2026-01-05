@@ -23,6 +23,8 @@ export interface Product {
   newPrice: number;
   currency: string;
   discount?: string;
+  description?: string;
+  availability?: boolean;
 }
 
 // Chat types

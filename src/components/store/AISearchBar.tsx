@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Settings, ImageIcon, FileText, Mic, X, ArrowUp, CornerDownRight, PanelLeft, Send, ArrowRight, Sparkles } from 'lucide-react';
+import { Settings, ImageIcon, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
@@ -11,6 +11,7 @@ import {
 } from '@/lib/api';
 import { sendKrupsMessage, resetSession as resetKrupsSession } from '@/lib/krupsApi';
 import { sendBluemarketMessage, resetBluemarketSession } from '@/lib/bluemarketApi';
+import { sendBeautyMessage, resetBeautySession } from '@/lib/beautyApi';
 import type { ChatMessage as ChatMessageType } from '@/types';
 
 // Liquid Glass 2025+ Animation Configuration
@@ -120,7 +121,12 @@ export function AISearchBar() {
     if (stage === 'collapsed') return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      // Ignore clicks inside product modal (rendered via Portal)
+      if (target.closest('[data-product-modal="true"]')) {
+        return;
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setStage(stage === 'expanded' ? 'inputBar' : 'collapsed');
       }
     };
@@ -210,6 +216,8 @@ export function AISearchBar() {
       await sendKrupsMessage(text.trim(), callbacks);
     } else if (themeName === 'bluemarket') {
       await sendBluemarketMessage(text.trim(), callbacks);
+    } else if (themeName === 'brainform') {
+      await sendBeautyMessage(text.trim(), callbacks);
     } else {
       await sendChatMessageMock({ message: text, theme: themeName }, callbacks);
     }
@@ -231,6 +239,8 @@ export function AISearchBar() {
       resetKrupsSession();
     } else if (themeName === 'bluemarket') {
       resetBluemarketSession();
+    } else if (themeName === 'brainform') {
+      resetBeautySession();
     }
   };
 
@@ -510,15 +520,16 @@ export function AISearchBar() {
                   <button
                     className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
                     style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                    title="Terms of Service"
                   >
-                    <PanelLeft className="w-5 h-5" />
+                    <HelpCircle className="w-5 h-5" />
                   </button>
                   {!hasMessages && (
                     <h2
                       className="text-[20px] font-bold"
                       style={{ color: 'var(--primary)' }}
                     >
-                      AI Smart assistant
+                      AI Shopping Mode
                     </h2>
                   )}
                   {hasMessages && (
@@ -639,7 +650,7 @@ export function AISearchBar() {
                 <div className="hidden md:flex items-center gap-3">
                   {/* Icons */}
                   <div className="flex items-center gap-2">
-                    {[Settings, ImageIcon, FileText].map((Icon, i) => (
+                    {[Settings, ImageIcon, Mic].map((Icon, i) => (
                       <Icon
                         key={i}
                         className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
@@ -684,7 +695,7 @@ export function AISearchBar() {
                     {hasMessages ? <Send className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
                   </motion.button>
 
-                  {/* Voice button */}
+                  {/* Live button */}
                   <button
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
                     style={{
@@ -692,7 +703,8 @@ export function AISearchBar() {
                       color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
                     }}
                   >
-                    <Mic className="w-4 h-4" />
+                    <Radio className="w-4 h-4" />
+                    <span>Live</span>
                   </button>
                 </div>
 
@@ -738,7 +750,7 @@ export function AISearchBar() {
                   {/* Icons row */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      {[Settings, ImageIcon, FileText].map((Icon, i) => (
+                      {[Settings, ImageIcon, Mic].map((Icon, i) => (
                         <Icon
                           key={i}
                           className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
@@ -753,7 +765,8 @@ export function AISearchBar() {
                         color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
                       }}
                     >
-                      <Mic className="w-4 h-4" />
+                      <Radio className="w-4 h-4" />
+                      <span>Live</span>
                     </button>
                   </div>
                 </div>

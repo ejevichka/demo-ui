@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
+  const [login, setLogin] = useState('admin');
+  const [password, setPassword] = useState('test');
   const [loginFocused, setLoginFocused] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -18,11 +18,11 @@ export function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left Panel - Brand */}
       <div
-        className="hidden lg:flex lg:w-1/2 p-10 flex-col justify-between relative overflow-hidden"
-        style={{ backgroundColor: 'var(--brand-100)' }}
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
+        style={{ backgroundColor: '#FFFFFF' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 z-10">
+        {/* Logo - absolute positioned */}
+        <div className="absolute top-10 left-20 flex items-center gap-3 z-10">
           <BrainformLogo />
           <span
             className="text-xl font-semibold"
@@ -32,17 +32,17 @@ export function LoginPage() {
           </span>
         </div>
 
-        {/* Geometric Art */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Geometric Art - fills entire panel */}
+        <div className="absolute inset-0">
           <img
             src="/Frame 23.png"
             alt=""
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         </div>
 
-        {/* Bottom text */}
-        <div className="z-10">
+        {/* Bottom text - absolute positioned over image */}
+        <div className="absolute bottom-10 left-20 z-10">
           <span
             className="inline-block px-5 py-2.5 rounded-full text-sm font-medium mb-5"
             style={{
@@ -50,7 +50,7 @@ export function LoginPage() {
               color: 'var(--primary)'
             }}
           >
-            Enterprise access
+            Demo access
           </span>
           <h1
             className="text-4xl font-bold leading-tight"
@@ -64,7 +64,7 @@ export function LoginPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+      <div className="flex-1 flex items-center justify-center px-20 py-10 bg-white">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
@@ -87,7 +87,7 @@ export function LoginPage() {
             className="text-center mb-10"
             style={{ color: 'var(--neutral-600)' }}
           >
-            Enterprise access
+            Demo access
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -97,7 +97,7 @@ export function LoginPage() {
                 className="block text-xs mb-2"
                 style={{ color: 'var(--neutral-600)' }}
               >
-                Label
+                Login
               </label>
               <div
                 className={cn(
@@ -144,7 +144,7 @@ export function LoginPage() {
                 className="block text-xs mb-2"
                 style={{ color: 'var(--neutral-600)' }}
               >
-                Label
+                Password
               </label>
               <input
                 type="password"
@@ -166,6 +166,7 @@ export function LoginPage() {
               style={{ backgroundColor: 'var(--primary)' }}
             >
               <ArrowRight className="w-5 h-5" />
+              <span>Login</span>
             </button>
           </form>
         </div>

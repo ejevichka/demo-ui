@@ -40,6 +40,19 @@ export default defineConfig({
           });
         },
       },
+      '/beauty-api': {
+        target: 'https://api-mrseanuz3a-ew.a.run.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/beauty-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (_proxyReq, req) => {
+            console.log('[VITE PROXY BEAUTY] >>> ', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('[VITE PROXY BEAUTY] <<<', proxyRes.statusCode, req.url);
+          });
+        },
+      },
     },
   },
 })

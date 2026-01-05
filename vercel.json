@@ -9,6 +9,10 @@
       "destination": "https://api-5snp6apu6a-ew.a.run.app/:path*"
     },
     {
+      "source": "/beauty-api/:path*",
+      "destination": "https://api-mrseanuz3a-ew.a.run.app/:path*"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }

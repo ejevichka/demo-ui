@@ -1,10 +1,7 @@
 import type { Product } from '@/types';
 
-// KRUPS API Configuration - always use proxy to avoid CORS
-const KRUPS_API_URL = '/krups-api';
-
-console.log('[KRUPS API] Base URL:', KRUPS_API_URL);
-console.log('[KRUPS API] Full URL will be:', window.location.origin + KRUPS_API_URL);
+// Beauty (Cosmetics) API Configuration - always use proxy to avoid CORS
+const BEAUTY_API_URL = '/beauty-api';
 
 const CAPTCHA_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
 
@@ -28,12 +25,11 @@ declare global {
 // ID Generation
 // ============================================
 
-export function generateSessionId(): string {
+function generateSessionId(): string {
   return `session-${crypto.randomUUID()}`;
 }
 
-export function generateUserId(): string {
-  // API requires: user-{uuid} format
+function generateUserId(): string {
   return `user-${crypto.randomUUID()}`;
 }
 
@@ -47,7 +43,7 @@ interface AuthState {
   expiresAt: number;
 }
 
-const AUTH_STORAGE_KEY = 'krups_auth';
+const AUTH_STORAGE_KEY = 'beauty_auth';
 
 function getStoredAuth(): AuthState | null {
   try {
@@ -56,9 +52,8 @@ function getStoredAuth(): AuthState | null {
 
     const auth = JSON.parse(stored) as AuthState;
 
-    // Check if token is expired (with 5 min buffer)
     if (auth.expiresAt < Date.now() + 5 * 60 * 1000) {
-      console.log('[KRUPS Auth] Token expired, clearing');
+      console.log('[BEAUTY Auth] Token expired, clearing');
       localStorage.removeItem(AUTH_STORAGE_KEY);
       return null;
     }
@@ -72,7 +67,7 @@ function getStoredAuth(): AuthState | null {
 
 function saveAuth(auth: AuthState): void {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
-  console.log('[KRUPS Auth] Token saved, expires:', new Date(auth.expiresAt).toISOString());
+  console.log('[BEAUTY Auth] Token saved, expires:', new Date(auth.expiresAt).toISOString());
 }
 
 function clearAuth(): void {
@@ -95,7 +90,7 @@ function loadCaptchaScript(): Promise<void> {
     return captchaScriptLoading;
   }
 
-  console.log('[KRUPS Auth] Loading CAPTCHA script...');
+  console.log('[BEAUTY Auth] Loading CAPTCHA script...');
 
   captchaScriptLoading = new Promise((resolve, reject) => {
     const script = document.createElement('script');
@@ -104,13 +99,13 @@ function loadCaptchaScript(): Promise<void> {
     script.defer = true;
 
     script.onload = () => {
-      console.log('[KRUPS Auth] CAPTCHA script loaded');
+      console.log('[BEAUTY Auth] CAPTCHA script loaded');
       captchaScriptLoaded = true;
       resolve();
     };
 
     script.onerror = () => {
-      console.error('[KRUPS Auth] Failed to load CAPTCHA script');
+      console.error('[BEAUTY Auth] Failed to load CAPTCHA script');
       captchaScriptLoading = null;
       reject(new Error('Failed to load CAPTCHA script'));
     };
@@ -124,7 +119,6 @@ function loadCaptchaScript(): Promise<void> {
 async function getCaptchaToken(): Promise<string> {
   await loadCaptchaScript();
 
-  // Wait for smartCaptcha to be available
   let attempts = 0;
   while (!window.smartCaptcha && attempts < 50) {
     await new Promise(r => setTimeout(r, 100));
@@ -135,7 +129,7 @@ async function getCaptchaToken(): Promise<string> {
     throw new Error('SmartCaptcha not available after loading');
   }
 
-  console.log('[KRUPS Auth] Getting CAPTCHA token (invisible mode)...');
+  console.log('[BEAUTY Auth] Getting CAPTCHA token (invisible mode)...');
 
   return new Promise((resolve, reject) => {
     const containerId = `captcha-${Date.now()}`;
@@ -149,12 +143,12 @@ async function getCaptchaToken(): Promise<string> {
         sitekey: CAPTCHA_SITE_KEY,
         invisible: true,
         callback: (token: string) => {
-          console.log('[KRUPS Auth] CAPTCHA token received');
+          console.log('[BEAUTY Auth] CAPTCHA token received');
           container.remove();
           resolve(token);
         },
         'error-callback': () => {
-          console.error('[KRUPS Auth] CAPTCHA verification failed');
+          console.error('[BEAUTY Auth] CAPTCHA verification failed');
           container.remove();
           reject(new Error('CAPTCHA verification failed'));
         },
@@ -165,9 +159,8 @@ async function getCaptchaToken(): Promise<string> {
       return;
     }
 
-    // Execute CAPTCHA after short delay (without widgetId as per docs)
     setTimeout(() => {
-      console.log('[KRUPS Auth] Executing CAPTCHA...');
+      console.log('[BEAUTY Auth] Executing CAPTCHA...');
       window.smartCaptcha?.execute();
     }, 500);
   });
@@ -179,25 +172,18 @@ async function getCaptchaToken(): Promise<string> {
 
 async function createUser(): Promise<AuthState> {
   const generatedUserId = generateUserId();
-  console.log('[KRUPS Auth] Creating user:', generatedUserId);
+  console.log('[BEAUTY Auth] Creating user:', generatedUserId);
 
   const captchaToken = await getCaptchaToken();
-  console.log('[KRUPS Auth] CAPTCHA token length:', captchaToken?.length);
+  console.log('[BEAUTY Auth] CAPTCHA token length:', captchaToken?.length);
 
   const requestBody = {
     userId: generatedUserId,
     captchaToken,
     isAnonymous: true,
   };
-  console.log('[KRUPS Auth] Request body (token truncated):', {
-    ...requestBody,
-    captchaToken: captchaToken?.substring(0, 50) + '...',
-  });
 
-  const fetchUrl = `${KRUPS_API_URL}/auth/create-user`;
-  console.log('[KRUPS Auth] >>> FETCHING URL:', fetchUrl);
-
-  const response = await fetch(fetchUrl, {
+  const response = await fetch(`${BEAUTY_API_URL}/auth/create-user`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -207,28 +193,25 @@ async function createUser(): Promise<AuthState> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[KRUPS Auth] Create user failed:', response.status);
-    console.error('[KRUPS Auth] Response headers:', Object.fromEntries(response.headers.entries()));
-    console.error('[KRUPS Auth] Response body:', errorText || '(empty)');
+    console.error('[BEAUTY Auth] Create user failed:', response.status);
     throw new Error(`Failed to create user: ${response.status} - ${errorText || 'Server error'}`);
   }
 
   const data = await response.json();
-  console.log('[KRUPS Auth] User created successfully, response:', JSON.stringify(data, null, 2));
+  console.log('[BEAUTY Auth] User created successfully');
 
-  // Handle different response structures - API may return in various formats
   const returnedUserId = data.result?.userId || data.result?.user?.userId || data.user?.userId || data.userId || generatedUserId;
   const accessToken = data.result?.accessToken || data.result?.token?.accessToken || data.token?.accessToken || data.accessToken;
 
   if (!accessToken) {
-    console.error('[KRUPS Auth] Invalid response structure - missing accessToken:', data);
+    console.error('[BEAUTY Auth] Invalid response structure - missing accessToken:', data);
     throw new Error('Invalid response from create-user endpoint: missing accessToken');
   }
 
   const auth: AuthState = {
     userId: returnedUserId,
     accessToken,
-    expiresAt: Date.now() + 23 * 60 * 60 * 1000, // 23 hours
+    expiresAt: Date.now() + 23 * 60 * 60 * 1000,
   };
 
   saveAuth(auth);
@@ -236,9 +219,9 @@ async function createUser(): Promise<AuthState> {
 }
 
 async function refreshToken(userId: string): Promise<AuthState> {
-  console.log('[KRUPS Auth] Refreshing token for:', userId);
+  console.log('[BEAUTY Auth] Refreshing token for:', userId);
 
-  const response = await fetch(`${KRUPS_API_URL}/auth/token`, {
+  const response = await fetch(`${BEAUTY_API_URL}/auth/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -247,13 +230,13 @@ async function refreshToken(userId: string): Promise<AuthState> {
   });
 
   if (!response.ok) {
-    console.log('[KRUPS Auth] Token refresh failed, need to re-authenticate');
+    console.log('[BEAUTY Auth] Token refresh failed, need to re-authenticate');
     clearAuth();
     return createUser();
   }
 
   const data = await response.json();
-  console.log('[KRUPS Auth] Token refreshed successfully');
+  console.log('[BEAUTY Auth] Token refreshed successfully');
 
   const auth: AuthState = {
     userId,
@@ -266,14 +249,12 @@ async function refreshToken(userId: string): Promise<AuthState> {
 }
 
 async function getValidAuth(): Promise<AuthState> {
-  // Check for existing valid auth
   const existingAuth = getStoredAuth();
   if (existingAuth) {
-    console.log('[KRUPS Auth] Using existing token');
+    console.log('[BEAUTY Auth] Using existing token');
     return existingAuth;
   }
 
-  // Create new user with CAPTCHA
   return createUser();
 }
 
@@ -292,9 +273,8 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
     },
   });
 
-  // Handle 401 - token expired
   if (response.status === 401) {
-    console.log('[KRUPS Auth] Got 401, refreshing token...');
+    console.log('[BEAUTY Auth] Got 401, refreshing token...');
     const newAuth = await refreshToken(auth.userId);
 
     return fetch(url, {
@@ -324,13 +304,13 @@ interface CheckQueryResponse {
 
 interface FindProductsResponse {
   result: {
-    documents: KrupsProduct[];
+    documents: BeautyProduct[];
     totalFound: number;
     appliedFilters: Record<string, unknown>;
   };
 }
 
-interface KrupsProduct {
+interface BeautyProduct {
   id: string;
   title: string;
   price?: number;
@@ -341,6 +321,7 @@ interface KrupsProduct {
   image?: string;
   category?: string;
   availability?: boolean;
+  url?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -354,13 +335,13 @@ export interface StreamCallbacks {
 // Product Transformation
 // ============================================
 
-function transformProduct(doc: KrupsProduct): Product {
+function transformProduct(doc: BeautyProduct): Product {
   const oldPrice = doc.oldPrice || doc.priceOld || doc.price || 0;
   const newPrice = doc.price || 0;
   return {
     id: doc.id,
     title: doc.title,
-    image: doc.imageUrl || doc.image || 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=300&h=300&fit=crop',
+    image: doc.imageUrl || doc.image || 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&h=300&fit=crop',
     oldPrice,
     newPrice,
     currency: '€',
@@ -381,7 +362,7 @@ interface SessionState {
 
 let currentSession: SessionState | null = null;
 
-export function getCurrentSession(): SessionState {
+function getCurrentSession(): SessionState {
   if (!currentSession) {
     currentSession = {
       sessionId: generateSessionId(),
@@ -391,7 +372,7 @@ export function getCurrentSession(): SessionState {
   return currentSession;
 }
 
-export function resetSession(): void {
+export function resetBeautySession(): void {
   currentSession = {
     sessionId: generateSessionId(),
     products: [],
@@ -404,10 +385,9 @@ export function resetSession(): void {
 
 async function checkQuery(question: string, sessionId: string): Promise<CheckQueryResponse['result']> {
   const auth = await getValidAuth();
-  console.log('[KRUPS API] checkQuery:', { question, sessionId });
-  console.log('[KRUPS API] >>> FETCHING:', `${KRUPS_API_URL}/checkQuery`);
+  console.log('[BEAUTY API] checkQuery:', { question, sessionId });
 
-  const response = await authFetch(`${KRUPS_API_URL}/checkQuery`, {
+  const response = await authFetch(`${BEAUTY_API_URL}/checkQuery`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -426,16 +406,15 @@ async function checkQuery(question: string, sessionId: string): Promise<CheckQue
   }
 
   const data: CheckQueryResponse = await response.json();
-  console.log('[KRUPS API] checkQuery result:', data.result);
+  console.log('[BEAUTY API] checkQuery result:', data.result);
   return data.result;
 }
 
 async function findProducts(question: string, sessionId: string): Promise<Product[]> {
   const auth = await getValidAuth();
-  console.log('[KRUPS API] findProducts:', { question, sessionId });
-  console.log('[KRUPS API] >>> FETCHING:', `${KRUPS_API_URL}/findProducts`);
+  console.log('[BEAUTY API] findProducts:', { question, sessionId });
 
-  const response = await authFetch(`${KRUPS_API_URL}/findProducts`, {
+  const response = await authFetch(`${BEAUTY_API_URL}/findProducts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -454,7 +433,7 @@ async function findProducts(question: string, sessionId: string): Promise<Produc
   }
 
   const data: FindProductsResponse = await response.json();
-  console.log('[KRUPS API] findProducts result:', data.result.documents?.length, 'products');
+  console.log('[BEAUTY API] findProducts result:', data.result.documents?.length, 'products');
 
   const products = (data.result.documents || []).map(transformProduct);
 
@@ -469,10 +448,9 @@ async function generateAnswerStream(
   callbacks: StreamCallbacks
 ): Promise<void> {
   const auth = await getValidAuth();
-  console.log('[KRUPS API] generateAnswer (streaming):', { sessionId });
-  console.log('[KRUPS API] >>> FETCHING:', `${KRUPS_API_URL}/generateAnswer`);
+  console.log('[BEAUTY API] generateAnswer (streaming):', { sessionId });
 
-  const response = await fetch(`${KRUPS_API_URL}/generateAnswer`, {
+  const response = await fetch(`${BEAUTY_API_URL}/generateAnswer`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -498,23 +476,21 @@ async function generateAnswerStream(
   const decoder = new TextDecoder();
   let fullMessage = '';
 
-  console.log('[KRUPS API] Starting to read stream...');
+  console.log('[BEAUTY API] Starting to read stream...');
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
-      console.log('[KRUPS API] Stream done, fullMessage length:', fullMessage.length);
+      console.log('[BEAUTY API] Stream done, fullMessage length:', fullMessage.length);
       break;
     }
 
     const chunk = decoder.decode(value, { stream: true });
-    console.log('[KRUPS API] Raw chunk:', chunk.substring(0, 200));
     const lines = chunk.split('\n');
 
     for (const line of lines) {
       if (line.startsWith('data: ')) {
         const data = line.slice(6);
-        console.log('[KRUPS API] SSE data:', data.substring(0, 100));
 
         if (data === '[DONE]') {
           const session = getCurrentSession();
@@ -525,22 +501,13 @@ async function generateAnswerStream(
         try {
           const parsed = JSON.parse(data);
 
-          // Handle different response formats:
-          // 1. {"message": "chunk"} - streaming chunks
-          // 2. {"type": "content", "text": "chunk"} - documented format
-          // 3. {"result": {"answer": "..."}} - final complete response
-          // 4. {"type": "done"} - stream end signal
-
           if (parsed.message) {
-            // Actual API format: {"message": "chunk"}
             fullMessage += parsed.message;
             callbacks.onChunk(parsed.message);
           } else if (parsed.type === 'content' && parsed.text) {
-            // Documented format
             fullMessage += parsed.text;
             callbacks.onChunk(parsed.text);
           } else if (parsed.result?.answer) {
-            // Final response with complete answer - use it if we haven't accumulated anything
             if (!fullMessage) {
               fullMessage = parsed.result.answer;
             }
@@ -556,7 +523,6 @@ async function generateAnswerStream(
             callbacks.onChunk(parsed.content);
           }
         } catch {
-          // Not JSON, might be plain text
           if (data.trim()) {
             fullMessage += data;
             callbacks.onChunk(data);
@@ -566,7 +532,7 @@ async function generateAnswerStream(
     }
   }
 
-  console.log('[KRUPS API] Stream complete, total message:', fullMessage.substring(0, 100));
+  console.log('[BEAUTY API] Stream complete');
   const session = getCurrentSession();
   callbacks.onComplete(fullMessage, session.products);
 }
@@ -575,56 +541,18 @@ async function generateAnswerStream(
 // Main Export: Send Message
 // ============================================
 
-export async function sendKrupsMessage(
+export async function sendBeautyMessage(
   message: string,
   callbacks: StreamCallbacks
 ): Promise<void> {
   try {
     const session = getCurrentSession();
 
-    // Step 1: Check Query
     await checkQuery(message, session.sessionId);
-
-    // Step 2: Find Products
     await findProducts(message, session.sessionId);
-
-    // Step 3: Generate Answer with streaming
     await generateAnswerStream(session.sessionId, callbacks);
   } catch (error) {
-    console.error('[KRUPS API] Error:', error);
+    console.error('[BEAUTY API] Error:', error);
     callbacks.onError(error instanceof Error ? error : new Error('Unknown error'));
-  }
-}
-
-// ============================================
-// Additional: Get Suggestions
-// ============================================
-
-export async function getKrupsSuggestions(): Promise<string[]> {
-  try {
-    const auth = await getValidAuth();
-    const session = getCurrentSession();
-
-    const response = await authFetch(`${KRUPS_API_URL}/generateSuggestions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sessionId: session.sessionId,
-        userId: auth.userId,
-      }),
-    });
-
-    if (!response.ok) {
-      console.warn('[KRUPS API] generateSuggestions failed:', response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    return data.result?.suggestions || [];
-  } catch (error) {
-    console.error('[KRUPS API] generateSuggestions error:', error);
-    return [];
   }
 }
