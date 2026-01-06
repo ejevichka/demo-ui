@@ -349,7 +349,7 @@ export function AISearchBar() {
       borderRadius: 28,
     },
     expanded: {
-      width: 'min(782px, calc(100vw - 16px))',
+      width: 'min(782px, calc(100vw - 32px))',
       height: 'min(532px, calc(100dvh - 100px))',
       borderRadius: 12,
     },
@@ -632,7 +632,7 @@ export function AISearchBar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-xl shadow-xl z-50"
+                          className="absolute top-full right-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-xl shadow-xl z-50"
                           style={{
                             backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
                             border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
