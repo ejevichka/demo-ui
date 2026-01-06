@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Settings, ImageIcon, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio } from 'lucide-react';
+import { Settings, ImageIcon, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
@@ -12,6 +12,15 @@ import {
 import { sendKrupsMessage, resetSession as resetKrupsSession } from '@/lib/krupsApi';
 import { sendBluemarketMessage, resetBluemarketSession } from '@/lib/bluemarketApi';
 import { sendBeautyMessage, resetBeautySession } from '@/lib/beautyApi';
+import {
+  loadAllChatHistories,
+  saveChatHistory,
+  clearChatHistory,
+  getThemeSessions,
+  switchToSession,
+  deleteSession,
+  type ChatSession,
+} from '@/lib/chatHistory';
 import type { ChatMessage as ChatMessageType } from '@/types';
 
 // Liquid Glass 2025+ Animation Configuration
@@ -46,14 +55,18 @@ export function AISearchBar() {
   const isDark = theme.isDark;
   const [stage, setStage] = useState<ChatStage>('inputBar');
   const [isLoading, setIsLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevStageRef = useRef<ChatStage | null>(null);
 
-  // Per-theme chat state
-  const [chatStateByTheme, setChatStateByTheme] = useState<Record<string, ThemeChatState>>({});
+  // Per-theme chat state - initialize from localStorage
+  const [chatStateByTheme, setChatStateByTheme] = useState<Record<string, ThemeChatState>>(() => {
+    return loadAllChatHistories();
+  });
   const prevThemeRef = useRef(themeName);
 
   // Get current theme's chat state
@@ -87,6 +100,26 @@ export function AISearchBar() {
       setIsLoading(false);
       prevThemeRef.current = themeName;
     }
+  }, [themeName]);
+
+  // Save chat history to localStorage when messages change
+  useEffect(() => {
+    if (messages.length > 0 || inputValue) {
+      saveChatHistory(themeName, { messages, inputValue });
+    }
+  }, [messages, inputValue, themeName]);
+
+  // Load sessions when history panel opens or theme changes
+  useEffect(() => {
+    if (showHistory) {
+      const data = getThemeSessions(themeName);
+      setSessions(data.sessions);
+    }
+  }, [showHistory, themeName]);
+
+  // Close history panel when theme changes
+  useEffect(() => {
+    setShowHistory(false);
   }, [themeName]);
 
   const hasMessages = messages.length > 0;
@@ -243,12 +276,40 @@ export function AISearchBar() {
   const handleNewChat = () => {
     setMessages([]);
     setInputValue('');
+    clearChatHistory(themeName);
     if (themeName === 'brownmarket') {
       resetKrupsSession();
     } else if (themeName === 'bluemarket') {
       resetBluemarketSession();
     } else if (themeName === 'brainform') {
       resetBeautySession();
+    }
+    setShowHistory(false);
+  };
+
+  const handleSwitchSession = (sessionId: string) => {
+    const session = switchToSession(themeName, sessionId);
+    if (session) {
+      setMessages(session.messages);
+      setInputValue('');
+      setShowHistory(false);
+    }
+  };
+
+  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteSession(themeName, sessionId);
+    // Refresh sessions list
+    const data = getThemeSessions(themeName);
+    setSessions(data.sessions);
+    // If deleted current session, load the new active one
+    if (data.activeSessionId) {
+      const activeSession = data.sessions.find(s => s.id === data.activeSessionId);
+      if (activeSession) {
+        setMessages(activeSession.messages);
+      }
+    } else {
+      setMessages([]);
     }
   };
 
@@ -552,6 +613,78 @@ export function AISearchBar() {
                       New chat
                     </button>
                   )}
+                  {/* History button */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowHistory(!showHistory)}
+                      className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
+                      style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                      title="Chat history"
+                    >
+                      <History className="w-5 h-5" />
+                    </button>
+
+                    {/* History dropdown */}
+                    <AnimatePresence>
+                      {showHistory && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-xl shadow-xl z-50"
+                          style={{
+                            backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+                            border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
+                          }}
+                        >
+                          <div className="p-3 border-b" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
+                            <h3 className="text-sm font-semibold" style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}>
+                              Chat History
+                            </h3>
+                          </div>
+                          {sessions.length === 0 ? (
+                            <div className="p-4 text-center text-sm" style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}>
+                              No previous chats
+                            </div>
+                          ) : (
+                            <div className="p-2">
+                              {sessions.map((session) => (
+                                <button
+                                  key={session.id}
+                                  onClick={() => handleSwitchSession(session.id)}
+                                  className="w-full flex items-center justify-between gap-2 p-2 rounded-lg text-left transition-colors hover:bg-black/5 group"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div
+                                      className="text-sm font-medium truncate"
+                                      style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
+                                    >
+                                      {session.title}
+                                    </div>
+                                    <div
+                                      className="text-xs"
+                                      style={{ color: isDark ? 'var(--neutral-500)' : 'var(--neutral-400)' }}
+                                    >
+                                      {new Date(session.updatedAt).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) => handleDeleteSession(session.id, e)}
+                                    className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10"
+                                    style={{ color: '#ef4444' }}
+                                    title="Delete chat"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1, rotate: 90 }}

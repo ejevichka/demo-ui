@@ -464,6 +464,9 @@ async function findProducts(question: string, sessionId: string): Promise<Produc
   return products;
 }
 
+// Timeout for API requests (60 seconds)
+const API_TIMEOUT = 60000;
+
 async function generateAnswerStream(
   sessionId: string,
   callbacks: StreamCallbacks
@@ -472,26 +475,45 @@ async function generateAnswerStream(
   console.log('[KRUPS API] generateAnswer (streaming):', { sessionId });
   console.log('[KRUPS API] >>> FETCHING:', `${KRUPS_API_URL}/generateAnswer`);
 
-  const response = await fetch(`${KRUPS_API_URL}/generateAnswer`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'text/event-stream',
-      'Authorization': `Bearer ${auth.accessToken}`,
-    },
-    body: JSON.stringify({
-      sessionId,
-      userId: auth.userId,
-    }),
-  });
+  // Create AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    console.warn('[KRUPS API] Request timeout after', API_TIMEOUT, 'ms');
+    controller.abort();
+  }, API_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(`${KRUPS_API_URL}/generateAnswer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Authorization': `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        userId: auth.userId,
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout - please try again');
+    }
+    throw error;
+  }
 
   if (!response.ok) {
+    clearTimeout(timeoutId);
     const error = await response.text();
     throw new Error(`generateAnswer failed: ${response.status} - ${error}`);
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
+    clearTimeout(timeoutId);
     throw new Error('No response body');
   }
 
@@ -500,70 +522,93 @@ async function generateAnswerStream(
 
   console.log('[KRUPS API] Starting to read stream...');
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      console.log('[KRUPS API] Stream done, fullMessage length:', fullMessage.length);
-      break;
-    }
+  // Reset timeout for streaming phase (longer timeout for reading chunks)
+  clearTimeout(timeoutId);
+  let streamTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    const chunk = decoder.decode(value, { stream: true });
-    console.log('[KRUPS API] Raw chunk:', chunk.substring(0, 200));
-    const lines = chunk.split('\n');
+  const resetStreamTimeout = () => {
+    if (streamTimeoutId) clearTimeout(streamTimeoutId);
+    streamTimeoutId = setTimeout(() => {
+      console.warn('[KRUPS API] Stream timeout - no data received');
+      reader.cancel();
+    }, 45000); // 45 seconds between chunks
+  };
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        console.log('[KRUPS API] SSE data:', data.substring(0, 100));
+  resetStreamTimeout();
 
-        if (data === '[DONE]') {
-          const session = getCurrentSession();
-          callbacks.onComplete(fullMessage, session.products);
-          return;
-        }
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      resetStreamTimeout();
 
-        try {
-          const parsed = JSON.parse(data);
+      if (done) {
+        console.log('[KRUPS API] Stream done, fullMessage length:', fullMessage.length);
+        break;
+      }
 
-          // Handle different response formats:
-          // 1. {"message": "chunk"} - streaming chunks
-          // 2. {"type": "content", "text": "chunk"} - documented format
-          // 3. {"result": {"answer": "..."}} - final complete response
-          // 4. {"type": "done"} - stream end signal
+      const chunk = decoder.decode(value, { stream: true });
+      console.log('[KRUPS API] Raw chunk:', chunk.substring(0, 200));
+      const lines = chunk.split('\n');
 
-          if (parsed.message) {
-            // Actual API format: {"message": "chunk"}
-            fullMessage += parsed.message;
-            callbacks.onChunk(parsed.message);
-          } else if (parsed.type === 'content' && parsed.text) {
-            // Documented format
-            fullMessage += parsed.text;
-            callbacks.onChunk(parsed.text);
-          } else if (parsed.result?.answer) {
-            // Final response with complete answer - use it if we haven't accumulated anything
-            if (!fullMessage) {
-              fullMessage = parsed.result.answer;
-            }
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          console.log('[KRUPS API] SSE data:', data.substring(0, 100));
+
+          if (data === '[DONE]') {
             const session = getCurrentSession();
             callbacks.onComplete(fullMessage, session.products);
             return;
-          } else if (parsed.type === 'done') {
-            const session = getCurrentSession();
-            callbacks.onComplete(fullMessage, session.products);
-            return;
-          } else if (parsed.content) {
-            fullMessage += parsed.content;
-            callbacks.onChunk(parsed.content);
           }
-        } catch {
-          // Not JSON, might be plain text
-          if (data.trim()) {
-            fullMessage += data;
-            callbacks.onChunk(data);
+
+          try {
+            const parsed = JSON.parse(data);
+
+            // Handle different response formats:
+            // 1. {"message": "chunk"} - streaming chunks
+            // 2. {"type": "content", "text": "chunk"} - documented format
+            // 3. {"result": {"answer": "..."}} - final complete response
+            // 4. {"type": "done"} - stream end signal
+
+            if (parsed.message) {
+              // Actual API format: {"message": "chunk"}
+              fullMessage += parsed.message;
+              callbacks.onChunk(parsed.message);
+            } else if (parsed.type === 'content' && parsed.text) {
+              // Documented format
+              fullMessage += parsed.text;
+              callbacks.onChunk(parsed.text);
+            } else if (parsed.result?.answer) {
+              // Final response with complete answer - use it if we haven't accumulated anything
+              if (!fullMessage) {
+                fullMessage = parsed.result.answer;
+              }
+              const session = getCurrentSession();
+              callbacks.onComplete(fullMessage, session.products);
+              return;
+            } else if (parsed.type === 'done') {
+              const session = getCurrentSession();
+              callbacks.onComplete(fullMessage, session.products);
+              return;
+            } else if (parsed.content) {
+              fullMessage += parsed.content;
+              callbacks.onChunk(parsed.content);
+            } else {
+              // Log unhandled format for debugging
+              console.warn('[KRUPS API] Unhandled SSE format:', JSON.stringify(parsed));
+            }
+          } catch {
+            // Not JSON, might be plain text
+            if (data.trim()) {
+              fullMessage += data;
+              callbacks.onChunk(data);
+            }
           }
         }
       }
     }
+  } finally {
+    if (streamTimeoutId) clearTimeout(streamTimeoutId);
   }
 
   console.log('[KRUPS API] Stream complete, total message:', fullMessage.substring(0, 100));
