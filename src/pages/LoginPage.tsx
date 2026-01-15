@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [login, setLogin] = useState('admin');
-  const [password, setPassword] = useState('test');
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
   const [loginFocused, setLoginFocused] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -56,6 +56,7 @@ export function AISearchBar() {
   const [stage, setStage] = useState<ChatStage>('inputBar');
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
@@ -117,9 +118,10 @@ export function AISearchBar() {
     }
   }, [showHistory, themeName]);
 
-  // Close history panel when theme changes
+  // Close history panel and disclaimer when theme changes
   useEffect(() => {
     setShowHistory(false);
+    setShowDisclaimer(false);
   }, [themeName]);
 
   const hasMessages = messages.length > 0;
@@ -586,13 +588,40 @@ export function AISearchBar() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
                 <div className="flex items-center gap-3">
-                  <button
-                    className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
-                    style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
-                    title="Terms of Service"
-                  >
-                    <HelpCircle className="w-5 h-5" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => { setShowDisclaimer(!showDisclaimer); setShowHistory(false); }}
+                      className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
+                      style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
+                      title="About AI Shopping Mode"
+                    >
+                      <HelpCircle className="w-5 h-5" />
+                    </button>
+
+                    {/* Disclaimer popup */}
+                    <AnimatePresence>
+                      {showDisclaimer && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-full left-0 mt-2 w-64 p-3 rounded-xl shadow-xl z-50"
+                          style={{
+                            backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+                            border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,
+                          }}
+                        >
+                          <p
+                            className="text-[13px] leading-relaxed"
+                            style={{ color: isDark ? 'var(--neutral-300)' : 'var(--neutral-600)' }}
+                          >
+                            AI Shopping Mode is in beta and can make mistakes.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                   {!hasMessages && (
                     <h2
                       className="text-[20px] font-bold"
@@ -616,7 +645,7 @@ export function AISearchBar() {
                   {/* History button */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowHistory(!showHistory)}
+                      onClick={() => { setShowHistory(!showHistory); setShowDisclaimer(false); }}
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
                       style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-600)' }}
                       title="Chat history"
@@ -624,7 +653,7 @@ export function AISearchBar() {
                       <History className="w-5 h-5" />
                     </button>
 
-                    {/* History dropdown */}
+                    {/* History dropdown - centered on mobile, under icon on desktop */}
                     <AnimatePresence>
                       {showHistory && (
                         <motion.div
@@ -632,7 +661,7 @@ export function AISearchBar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-full right-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-xl shadow-xl z-50"
+                          className="fixed left-1/2 -translate-x-1/2 top-[55px] md:absolute md:top-full md:left-0 md:translate-x-0 mt-2 w-72 max-w-[calc(100vw-48px)] md:max-w-none max-h-80 overflow-y-auto rounded-xl shadow-xl z-[60]"
                           style={{
                             backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
                             border: `1px solid ${isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'}`,

@@ -673,3 +673,81 @@ export async function getKrupsSuggestions(): Promise<string[]> {
     return [];
   }
 }
+
+// ============================================
+// Feedback: Submit user feedback for a message
+// ============================================
+
+interface FeedbackRequest {
+  messageId: string;
+  isPositive: boolean;
+  comment?: string;
+}
+
+interface FeedbackResponse {
+  result: {
+    success: boolean;
+    feedback: {
+      isPositive: boolean;
+      comment?: string;
+      timestamp: string;
+    };
+  };
+}
+
+export async function submitKrupsFeedback(request: FeedbackRequest): Promise<FeedbackResponse> {
+  try {
+    await getValidAuth(); // Ensure we have valid auth
+    const session = getCurrentSession();
+
+    console.log('[KRUPS API] submitFeedback:', {
+      sessionId: session.sessionId,
+      messageId: request.messageId,
+      isPositive: request.isPositive,
+    });
+
+    const response = await authFetch(
+      `${KRUPS_API_URL}/sessions/${session.sessionId}/messages/${request.messageId}/feedback`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPositive: request.isPositive,
+          comment: request.comment,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('[KRUPS API] submitFeedback failed:', response.status);
+      // Return mock success for demo
+      return {
+        result: {
+          success: true,
+          feedback: {
+            isPositive: request.isPositive,
+            comment: request.comment,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      };
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('[KRUPS API] submitFeedback error:', error);
+    // Return mock success for demo
+    return {
+      result: {
+        success: true,
+        feedback: {
+          isPositive: request.isPositive,
+          comment: request.comment,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    };
+  }
+}

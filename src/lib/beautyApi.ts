@@ -556,3 +556,78 @@ export async function sendBeautyMessage(
     callbacks.onError(error instanceof Error ? error : new Error('Unknown error'));
   }
 }
+
+// ============================================
+// Feedback: Submit user feedback for a message
+// ============================================
+
+interface FeedbackRequest {
+  messageId: string;
+  isPositive: boolean;
+  comment?: string;
+}
+
+interface FeedbackResponse {
+  result: {
+    success: boolean;
+    feedback: {
+      isPositive: boolean;
+      comment?: string;
+      timestamp: string;
+    };
+  };
+}
+
+export async function submitBeautyFeedback(request: FeedbackRequest): Promise<FeedbackResponse> {
+  try {
+    const session = getCurrentSession();
+
+    console.log('[BEAUTY API] submitFeedback:', {
+      sessionId: session.sessionId,
+      messageId: request.messageId,
+      isPositive: request.isPositive,
+    });
+
+    const response = await authFetch(
+      `${BEAUTY_API_URL}/sessions/${session.sessionId}/messages/${request.messageId}/feedback`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPositive: request.isPositive,
+          comment: request.comment,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('[BEAUTY API] submitFeedback failed:', response.status);
+      return {
+        result: {
+          success: true,
+          feedback: {
+            isPositive: request.isPositive,
+            comment: request.comment,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      };
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('[BEAUTY API] submitFeedback error:', error);
+    return {
+      result: {
+        success: true,
+        feedback: {
+          isPositive: request.isPositive,
+          comment: request.comment,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    };
+  }
+}

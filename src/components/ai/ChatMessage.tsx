@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage as ChatMessageType, Product } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
+import { submitFeedback } from '@/lib/feedbackApi';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -31,28 +33,40 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   // Assistant message
   const showLoader = message.isStreaming && !message.content;
+  const showFeedback = !message.isStreaming && message.content;
 
   return (
     <div className="flex justify-start">
-      <div
-        className="max-w-[85%] px-5 py-4 rounded-2xl rounded-tl-md"
-        style={{
-          backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
-          color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
-          boxShadow: isDark ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.06)',
-          border: isDark ? '1px solid var(--neutral-700)' : 'none',
-        }}
-      >
-        <div className="text-[14px] leading-[1.7]">
-          {showLoader ? (
-            <TypingIndicator />
-          ) : (
-            <>
-              <FormattedMessage content={message.content} isDark={isDark} products={message.products} />
-              {message.isStreaming && <StreamingCursor />}
-            </>
-          )}
+      <div className="max-w-[85%]">
+        <div
+          className="px-5 py-4 rounded-2xl rounded-tl-md"
+          style={{
+            backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF',
+            color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+            boxShadow: isDark ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.06)',
+            border: isDark ? '1px solid var(--neutral-700)' : 'none',
+          }}
+        >
+          <div className="text-[14px] leading-[1.7]">
+            {showLoader ? (
+              <TypingIndicator />
+            ) : (
+              <>
+                <FormattedMessage content={message.content} isDark={isDark} products={message.products} />
+                {message.isStreaming && <StreamingCursor />}
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Feedback section */}
+        {showFeedback && (
+          <FeedbackSection
+            messageId={message.id}
+            isDark={isDark}
+            themeName={theme.id}
+          />
+        )}
       </div>
     </div>
   );
@@ -94,6 +108,175 @@ function TypingIndicator() {
           animationDuration: '600ms',
         }}
       />
+    </div>
+  );
+}
+
+// Feedback section component
+interface FeedbackSectionProps {
+  messageId: string;
+  isDark: boolean;
+  themeName: string;
+}
+
+function FeedbackSection({ messageId, isDark, themeName }: FeedbackSectionProps) {
+  const [selectedFeedback, setSelectedFeedback] = useState<'positive' | 'negative' | null>(null);
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleFeedbackClick = (type: 'positive' | 'negative') => {
+    if (isSubmitted) return;
+    setSelectedFeedback(type);
+    setShowCommentForm(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedFeedback) return;
+
+    setIsSubmitting(true);
+    try {
+      await submitFeedback(
+        {
+          messageId,
+          isPositive: selectedFeedback === 'positive',
+          comment: comment.trim() || undefined,
+        },
+        themeName as 'brownmarket' | 'bluemarket' | 'brainform' | 'redmarket'
+      );
+      setIsSubmitted(true);
+      setShowCommentForm(false);
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowCommentForm(false);
+    setSelectedFeedback(null);
+    setComment('');
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className="mt-2 flex items-center gap-2">
+        <div
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[12px]"
+          style={{
+            backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+            color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
+          }}
+        >
+          {selectedFeedback === 'positive' ? (
+            <ThumbsUp className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+          ) : (
+            <ThumbsDown className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+          )}
+          <span>Thank you for your feedback</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      {/* Feedback buttons */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => handleFeedbackClick('positive')}
+          className={`p-1.5 rounded-lg transition-all ${
+            selectedFeedback === 'positive' ? 'scale-110' : 'hover:scale-105'
+          }`}
+          style={{
+            backgroundColor: selectedFeedback === 'positive'
+              ? (isDark ? 'var(--neutral-600)' : 'var(--neutral-200)')
+              : 'transparent',
+            color: selectedFeedback === 'positive'
+              ? 'var(--primary)'
+              : (isDark ? 'var(--neutral-500)' : 'var(--neutral-400)'),
+          }}
+          title="Good response"
+        >
+          <ThumbsUp className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleFeedbackClick('negative')}
+          className={`p-1.5 rounded-lg transition-all ${
+            selectedFeedback === 'negative' ? 'scale-110' : 'hover:scale-105'
+          }`}
+          style={{
+            backgroundColor: selectedFeedback === 'negative'
+              ? (isDark ? 'var(--neutral-600)' : 'var(--neutral-200)')
+              : 'transparent',
+            color: selectedFeedback === 'negative'
+              ? 'var(--primary)'
+              : (isDark ? 'var(--neutral-500)' : 'var(--neutral-400)'),
+          }}
+          title="Bad response"
+        >
+          <ThumbsDown className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Comment form dropdown */}
+      <AnimatePresence>
+        {showCommentForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div
+              className="mt-3 p-3 rounded-xl"
+              style={{
+                backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--neutral-200)'}`,
+              }}
+            >
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Leave a comment (optional)"
+                rows={3}
+                className="w-full bg-transparent border rounded-lg px-3 py-2 text-[13px] resize-none outline-none focus:ring-1"
+                style={{
+                  borderColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-300)',
+                  color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+                }}
+              />
+              <div className="flex justify-end gap-2 mt-3">
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{
+                    backgroundColor: 'var(--primary)',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {isSubmitting ? 'Sending...' : 'Submit'}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-70 disabled:opacity-50"
+                  style={{
+                    backgroundColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-200)',
+                    color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
