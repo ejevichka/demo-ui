@@ -347,6 +347,7 @@ interface KrupsProduct {
 export interface StreamCallbacks {
   onChunk: (chunk: string) => void;
   onComplete: (fullMessage: string, products?: Product[]) => void;
+  onSuggestionsReceived?: (suggestions: string[]) => void;
   onError: (error: Error) => void;
 }
 
@@ -635,6 +636,12 @@ export async function sendKrupsMessage(
 
     // Step 3: Generate Answer with streaming
     await generateAnswerStream(session.sessionId, callbacks);
+
+    // Step 4: Fetch suggestions after answer is complete
+    if (callbacks.onSuggestionsReceived) {
+      const suggestions = await getKrupsSuggestions();
+      callbacks.onSuggestionsReceived(suggestions);
+    }
   } catch (error) {
     console.error('[KRUPS API] Error:', error);
     callbacks.onError(error instanceof Error ? error : new Error('Unknown error'));

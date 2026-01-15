@@ -6,6 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 export interface StreamCallbacks {
   onChunk: (chunk: string) => void;
   onComplete: (fullMessage: string, products?: Product[]) => void;
+  onSuggestionsReceived?: (suggestions: string[]) => void;
   onError: (error: Error) => void;
 }
 

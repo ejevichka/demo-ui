@@ -501,92 +501,21 @@ function ProductModal({ name, url: _url, price, oldPrice, imageUrl, isDark, desc
   );
 }
 
-interface ParsedProduct {
-  name: string;
-  url: string;
-  price?: number;
-  fullMatch: string;
-}
-
-function parseProductLinks(text: string): ParsedProduct[] {
-  const products: ParsedProduct[] = [];
-
-  // Match product links to krups.ru - with or without price
-  // Format 1: **[Name](url)** — 59999 ₽
-  // Format 2: [Name](url) — 59999 ₽
-  // Format 3: **[Name](url)** (no price)
-  // Format 4: [Name](url) (no price, but only krups.ru product links)
-  const productRegex = /\*?\*?\[([^\]]+)\]\((https:\/\/krups\.ru\/product[^\)]+)\)\*?\*?(?:\s*[—\-–]\s*([\d\s]+)\s*₽)?/g;
-
-  let match;
-  while ((match = productRegex.exec(text)) !== null) {
-    const name = match[1].trim();
-    const url = match[2].trim();
-    const priceStr = match[3]?.replace(/\s/g, '');
-    const price = priceStr ? parseInt(priceStr, 10) : undefined;
-
-    products.push({
-      name,
-      url,
-      price: price && !isNaN(price) ? price : undefined,
-      fullMatch: match[0]
-    });
-  }
-
-  return products;
-}
-
 interface FormattedMessageProps {
   content: string;
   isDark: boolean;
   products?: Product[];
 }
 
-// Extract only intro text before products (removes all product descriptions)
-function extractIntroText(content: string): string {
-  // Patterns that indicate start of product section
-  const productSectionPatterns = [
-    /(?:^|\n)\s*(?:1\.|•|-|\*)\s*\*?\*?\[/m, // Numbered or bullet list with links
-    /(?:^|\n)\s*\*?\*?\[.+\]\(http/m, // Markdown links
-    /(?:^|\n)\s*(?:Here are|I found|Based on|Вот|Нашел|На основе)/im, // Intro phrases before products
-  ];
-
-  let cutoffIndex = content.length;
-
-  for (const pattern of productSectionPatterns) {
-    const match = content.match(pattern);
-    if (match && match.index !== undefined && match.index < cutoffIndex) {
-      cutoffIndex = match.index;
-    }
-  }
-
-  // Get text before products
-  let introText = content.slice(0, cutoffIndex).trim();
-
-  // Remove trailing incomplete sentences or colons
-  introText = introText.replace(/[:]\s*$/, '').trim();
-
-  // If intro is too short or looks like just a header, return empty
-  if (introText.length < 10) {
-    return '';
-  }
-
-  return introText;
-}
-
 function FormattedMessage({ content, isDark, products }: FormattedMessageProps) {
-  // If we have products from API, show them directly with minimal text
-  if (products && products.length > 0) {
-    const introText = extractIntroText(content);
+  return (
+    <>
+      {/* Full text content - no truncation */}
+      <FormattedTextContent content={content} isDark={isDark} />
 
-    return (
-      <>
-        {introText && (
-          <div className="mb-3">
-            <FormattedTextContent content={introText} isDark={isDark} />
-          </div>
-        )}
-        <div className="flex flex-row gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+      {/* Product cards after text */}
+      {products && products.length > 0 && (
+        <div className="flex flex-row gap-3 overflow-x-auto pb-2 -mx-2 px-2 mt-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -601,39 +530,7 @@ function FormattedMessage({ content, isDark, products }: FormattedMessageProps) 
             />
           ))}
         </div>
-      </>
-    );
-  }
-
-  // No products from API - check for parsed product links in text
-  const parsedProducts = parseProductLinks(content);
-
-  if (parsedProducts.length === 0) {
-    // No products at all - just render text
-    return <FormattedTextContent content={content} isDark={isDark} />;
-  }
-
-  // Has product links in text - extract intro and show cards
-  const introText = extractIntroText(content);
-
-  return (
-    <>
-      {introText && (
-        <div className="mb-3">
-          <FormattedTextContent content={introText} isDark={isDark} />
-        </div>
       )}
-      <div className="flex flex-row gap-3 overflow-x-auto pb-2 -mx-2 px-2">
-        {parsedProducts.map((p, j) => (
-          <ProductCard
-            key={j}
-            name={p.name}
-            url={p.url}
-            price={p.price}
-            isDark={isDark}
-          />
-        ))}
-      </div>
     </>
   );
 }

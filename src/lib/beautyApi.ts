@@ -328,6 +328,7 @@ interface BeautyProduct {
 export interface StreamCallbacks {
   onChunk: (chunk: string) => void;
   onComplete: (fullMessage: string, products?: Product[]) => void;
+  onSuggestionsReceived?: (suggestions: string[]) => void;
   onError: (error: Error) => void;
 }
 
@@ -551,9 +552,48 @@ export async function sendBeautyMessage(
     await checkQuery(message, session.sessionId);
     await findProducts(message, session.sessionId);
     await generateAnswerStream(session.sessionId, callbacks);
+
+    // Fetch suggestions after answer is complete
+    if (callbacks.onSuggestionsReceived) {
+      const suggestions = await getBeautySuggestions();
+      callbacks.onSuggestionsReceived(suggestions);
+    }
   } catch (error) {
     console.error('[BEAUTY API] Error:', error);
     callbacks.onError(error instanceof Error ? error : new Error('Unknown error'));
+  }
+}
+
+// ============================================
+// Additional: Get Suggestions
+// ============================================
+
+export async function getBeautySuggestions(): Promise<string[]> {
+  try {
+    const auth = await getValidAuth();
+    const session = getCurrentSession();
+
+    const response = await authFetch(`${BEAUTY_API_URL}/generateSuggestions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sessionId: session.sessionId,
+        userId: auth.userId,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('[BEAUTY API] generateSuggestions failed:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.result?.suggestions || [];
+  } catch (error) {
+    console.error('[BEAUTY API] generateSuggestions error:', error);
+    return [];
   }
 }
 

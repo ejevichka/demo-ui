@@ -58,6 +58,7 @@ export function AISearchBar() {
   const [showHistory, setShowHistory] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -118,10 +119,11 @@ export function AISearchBar() {
     }
   }, [showHistory, themeName]);
 
-  // Close history panel and disclaimer when theme changes
+  // Close history panel, disclaimer and clear API suggestions when theme changes
   useEffect(() => {
     setShowHistory(false);
     setShowDisclaimer(false);
+    setApiSuggestions([]);
   }, [themeName]);
 
   const hasMessages = messages.length > 0;
@@ -253,6 +255,9 @@ export function AISearchBar() {
         });
         setIsLoading(false);
       },
+      onSuggestionsReceived: (suggestions: string[]) => {
+        setApiSuggestions(suggestions);
+      },
     };
 
     if (themeName === 'brownmarket') {
@@ -278,6 +283,7 @@ export function AISearchBar() {
   const handleNewChat = () => {
     setMessages([]);
     setInputValue('');
+    setApiSuggestions([]);
     clearChatHistory(themeName);
     if (themeName === 'brownmarket') {
       resetKrupsSession();
@@ -782,28 +788,28 @@ export function AISearchBar() {
                     ))}
                     <div ref={messagesEndRef} />
 
-                    {/* Follow-up suggestions */}
-                    {hasMessages && !isLoading && (
+                    {/* Follow-up suggestions from API */}
+                    {hasMessages && !isLoading && apiSuggestions.length > 0 && (
                       <div className="pt-3">
                         <p className="text-[11px] mb-2" style={{ color: 'var(--neutral-500)' }}>
                           You might also be interested in
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {suggestedQuestions.slice(0, 2).map((q, index) => (
+                          {apiSuggestions.slice(0, 3).map((suggestion, index) => (
                             <motion.button
-                              key={q.id}
+                              key={`suggestion-${index}`}
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: index * 0.1 }}
                               whileHover={{ scale: 1.03 }}
-                              onClick={() => handleSend(q.text)}
+                              onClick={() => handleSend(suggestion)}
                               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px]"
                               style={{
                                 backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
                                 color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
                               }}
                             >
-                              {q.text}
+                              {suggestion}
                               <ArrowRight className="w-3 h-3 ml-1" />
                             </motion.button>
                           ))}

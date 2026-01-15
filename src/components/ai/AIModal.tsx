@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, History, PenSquare, ArrowRight, Settings, ImageIcon, FileText, Mic, ArrowUp } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useTheme } from '@/hooks/useTheme';
-import { suggestedQuestions } from '@/lib/themes';
+import { suggestedQuestionsByTheme } from '@/lib/themes';
 import {
   sendChatMessageMock,
   createUserMessage,
@@ -22,11 +22,13 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isDark = theme.isDark;
   const hasMessages = messages.length > 0;
+  const staticSuggestions = suggestedQuestionsByTheme[themeName] || suggestedQuestionsByTheme.brownmarket;
 
   useEffect(() => {
     if (isOpen) {
@@ -87,6 +89,9 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
             return updated;
           });
           setIsLoading(false);
+        },
+        onSuggestionsReceived: (suggestions: string[]) => {
+          setApiSuggestions(suggestions);
         },
       }
     );
@@ -308,7 +313,7 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
                       transition={{ delay: 0.4, type: 'spring', damping: 18, stiffness: 200 }}
                       whileHover={{ scale: 1.05, y: -4, boxShadow: '0 16px 48px rgba(0, 0, 0, 0.15)' }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleSend(suggestedQuestions[0]?.text || '')}
+                      onClick={() => handleSend(staticSuggestions[0]?.text || '')}
                       className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[14px] font-medium"
                       style={{
                         backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)',
@@ -318,7 +323,7 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
                         color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
                       }}
                     >
-                      {suggestedQuestions[0]?.text || 'How to choose a coffee machine?'}
+                      {staticSuggestions[0]?.text || 'How to choose a coffee machine?'}
                       <ArrowRight className="w-4 h-4" />
                     </motion.button>
                   </div>
@@ -448,8 +453,8 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
                   </div>
                 </div>
 
-                {/* Suggested questions - Glass chips */}
-                {hasMessages && !isLoading && (
+                {/* Suggested questions - Glass chips (from API when available) */}
+                {hasMessages && !isLoading && apiSuggestions.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -459,15 +464,15 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
                       You might also be interested in
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {suggestedQuestions.slice(0, 3).map((q, index) => (
+                      {apiSuggestions.slice(0, 3).map((suggestion, index) => (
                         <motion.button
-                          key={q.id}
+                          key={`suggestion-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => handleSend(q.text)}
+                          onClick={() => handleSend(suggestion)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px]"
                           style={{
                             backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
@@ -476,7 +481,7 @@ export function AIModal({ isOpen, onClose }: AIModalProps) {
                             color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
                           }}
                         >
-                          {q.text}
+                          {suggestion}
                           <ArrowRight className="w-3 h-3 ml-1" />
                         </motion.button>
                       ))}
