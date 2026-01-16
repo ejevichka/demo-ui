@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Settings, ImageIcon, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
+import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { ChatMessage } from '@/components/ai/ChatMessage';
@@ -59,8 +59,10 @@ export function AISearchBar() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevStageRef = useRef<ChatStage | null>(null);
@@ -271,14 +273,39 @@ export function AISearchBar() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
+      e.preventDefault();
       handleSend();
     }
     if (e.key === 'Escape') {
       handleCollapse();
     }
   };
+
+  const handleMicClick = () => {
+    setIsRecording(true);
+    // TODO: Implement actual voice recording
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    // TODO: Process recorded audio
+  };
+
+  // Auto-resize textarea (both desktop and mobile)
+  useEffect(() => {
+    const resizeTextarea = (textarea: HTMLTextAreaElement | null) => {
+      if (textarea) {
+        textarea.style.height = 'auto';
+        const maxHeight = 72; // 3 lines
+        textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+      }
+    };
+    resizeTextarea(textareaRef.current); // Desktop
+    resizeTextarea(inputRef.current);     // Mobile
+  }, [inputValue]);
 
   const handleNewChat = () => {
     setMessages([]);
@@ -821,121 +848,209 @@ export function AISearchBar() {
               </div>
 
               {/* Input area */}
-              <div className="px-5 py-4 border-t" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
-                {/* Desktop: Icons + Input + Send in one row */}
-                <div className="hidden md:flex items-center gap-3">
-                  {/* Icons */}
-                  <div className="flex items-center gap-2">
-                    {[Settings, ImageIcon, Mic].map((Icon, i) => (
-                      <Icon
-                        key={i}
-                        className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                        style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                      />
-                    ))}
+              <div className="px-5 py-4 border-t relative" style={{ borderColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)' }}>
+                {/* Voice Recording Overlay */}
+                <AnimatePresence>
+                  {isRecording && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 flex items-center justify-center z-10 mx-5 my-4 rounded-xl"
+                      style={{ backgroundColor: isDark ? 'var(--neutral-800)' : '#FFFFFF' }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-[14px] font-medium" style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}>
+                          Recording...
+                        </span>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={handleStopRecording}
+                          className="w-8 h-8 rounded-full flex items-center justify-center"
+                          style={{
+                            backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-200)',
+                            color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Desktop: [+] [Live] | [Input] | [Mic/Send] */}
+                <div className="hidden md:flex items-start gap-3">
+                  {/* Left icons: [+] [Live] */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </motion.button>
+
+                    <button
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                      }}
+                    >
+                      <Radio className="w-4 h-4" />
+                      <span>Live</span>
+                    </button>
                   </div>
 
-                  {/* Input */}
+                  {/* Auto-expanding textarea */}
                   <div
-                    className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                    className="flex-1 flex items-end gap-2 px-4 py-2.5 rounded-xl"
                     style={{
                       backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
                       border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
                     }}
                   >
-                    <input
-                      ref={inputRef}
-                      type="text"
+                    <textarea
+                      ref={textareaRef}
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Ask me anything..."
-                      className="flex-1 bg-transparent border-none outline-none text-[14px]"
-                      style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-                      disabled={isLoading}
+                      placeholder="Ask anything..."
+                      rows={1}
+                      className="flex-1 bg-transparent border-none outline-none text-[14px] resize-none leading-[1.5]"
+                      style={{
+                        color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+                        maxHeight: '72px',
+                      }}
+                      disabled={isLoading || isRecording}
                     />
                   </div>
 
-                  {/* Send button */}
+                  {/* Animated Mic/Send button */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => handleSend()}
-                    disabled={!inputValue.trim() || isLoading}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-50"
+                    onClick={inputValue.trim() ? () => handleSend() : handleMicClick}
+                    disabled={isLoading || isRecording}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 mt-0.5"
                     style={{
                       backgroundColor: inputValue.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
                       color: inputValue.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
                     }}
                   >
-                    {hasMessages ? <Send className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+                    <AnimatePresence mode="wait">
+                      {inputValue.trim() ? (
+                        <motion.div
+                          key="send"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <Send className="w-4 h-4" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="mic"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <Mic className="w-4 h-4" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.button>
-
-                  {/* Live button */}
-                  <button
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
-                    style={{
-                      backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                      color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                    }}
-                  >
-                    <Radio className="w-4 h-4" />
-                    <span>Live</span>
-                  </button>
                 </div>
 
-                {/* Mobile: Input row + Icons row below */}
+                {/* Mobile: Row 1: [Input] [Mic/Send], Row 2: [+] [Live] */}
                 <div className="flex md:hidden flex-col gap-3">
-                  {/* Input row */}
-                  <div className="flex items-center gap-2">
+                  {/* Row 1: Input + Mic/Send */}
+                  <div className="flex items-end gap-2">
                     <div
-                      className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
+                      className="flex-1 flex items-end gap-2 px-4 py-3 rounded-xl"
                       style={{
                         backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
                         border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
                       }}
                     >
-                      <input
+                      <textarea
                         ref={inputRef}
-                        type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask me anything..."
-                        className="flex-1 bg-transparent border-none outline-none text-[15px]"
-                        style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-                        disabled={isLoading}
+                        placeholder="Ask anything..."
+                        rows={1}
+                        className="flex-1 bg-transparent border-none outline-none text-[15px] resize-none leading-[1.5]"
+                        style={{
+                          color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+                          maxHeight: '72px',
+                        }}
+                        disabled={isLoading || isRecording}
                       />
                     </div>
 
-                    {/* Send button */}
+                    {/* Animated Mic/Send button */}
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => handleSend()}
-                      disabled={!inputValue.trim() || isLoading}
+                      onClick={inputValue.trim() ? () => handleSend() : handleMicClick}
+                      disabled={isLoading || isRecording}
                       className="w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-50"
                       style={{
                         backgroundColor: inputValue.trim() ? 'var(--primary)' : (isDark ? 'var(--neutral-700)' : 'var(--neutral-200)'),
                         color: inputValue.trim() ? '#FFFFFF' : (isDark ? 'var(--neutral-400)' : 'var(--neutral-500)'),
                       }}
                     >
-                      {hasMessages ? <Send className="w-5 h-5" /> : <ArrowUp className="w-5 h-5" />}
+                      <AnimatePresence mode="wait">
+                        {inputValue.trim() ? (
+                          <motion.div
+                            key="send-mobile"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <Send className="w-5 h-5" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="mic-mobile"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <Mic className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.button>
                   </div>
 
-                  {/* Icons row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {[Settings, ImageIcon, Mic].map((Icon, i) => (
-                        <Icon
-                          key={i}
-                          className="w-5 h-5 cursor-pointer transition-colors hover:opacity-70"
-                          style={{ color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)' }}
-                        />
-                      ))}
-                    </div>
+                  {/* Row 2: [+] [Live] */}
+                  <div className="flex items-center gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        color: isDark ? 'var(--neutral-400)' : 'var(--neutral-500)',
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </motion.button>
+
                     <button
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
                       style={{
                         backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
                         color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
