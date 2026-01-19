@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Markdown from 'react-markdown';
 import type { ChatMessage as ChatMessageType, Product } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import { submitFeedback } from '@/lib/feedbackApi';
@@ -535,219 +536,119 @@ function FormattedMessage({ content, isDark, products }: FormattedMessageProps) 
   );
 }
 
-function FormattedTextContent({ content, isDark }: { content: string; isDark: boolean }) {
-  const lines = content.split('\n');
-  const elements: React.ReactNode[] = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    // Check if this is the start of a table (line starts with |)
-    if (line.trim().startsWith('|')) {
-      const tableLines: string[] = [];
-      while (i < lines.length && lines[i].trim().startsWith('|')) {
-        tableLines.push(lines[i]);
-        i++;
-      }
-      if (tableLines.length >= 2) {
-        elements.push(
-          <MarkdownTable key={`table-${i}`} lines={tableLines} isDark={isDark} />
-        );
-      }
-      continue;
-    }
-
-    // Regular line
-    elements.push(
-      <span key={i}>
-        <FormattedLine line={line} isDark={isDark} />
-        {i < lines.length - 1 && <br />}
-      </span>
-    );
-    i++;
-  }
-
-  return <>{elements}</>;
+// Preprocess markdown content from API
+function preprocessMarkdown(content: string): string {
+  return content
+    // Convert literal \n to actual newlines
+    .replace(/\\n/g, '\n')
+    // Fix unclosed bold: **text* → **text**
+    .replace(/\*\*([^*\n]+)\*(?!\*)/g, '**$1**')
+    // Fix markdown links split across lines
+    .replace(/\]\s*[\r\n]+\s*\(/g, '](')
+    .replace(/\]\s+\(/g, '](');
 }
 
-// Markdown table renderer
-function MarkdownTable({ lines, isDark }: { lines: string[]; isDark: boolean }) {
-  // Parse table rows
-  const parseRow = (line: string): string[] => {
-    return line
-      .split('|')
-      .slice(1, -1) // Remove empty first and last elements
-      .map(cell => cell.trim());
-  };
-
-  // First line is header
-  const headerCells = parseRow(lines[0]);
-
-  // Second line is separator (skip it)
-  // Remaining lines are data rows
-  const dataRows = lines.slice(2).map(parseRow);
+function FormattedTextContent({ content, isDark }: { content: string; isDark: boolean }) {
+  const processedContent = preprocessMarkdown(content);
 
   return (
-    <div className="overflow-x-auto my-3 -mx-2">
-      <table
-        className="w-full text-[12px] border-collapse"
-        style={{
-          backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-50)',
-          borderRadius: '8px',
-          overflow: 'hidden',
-        }}
-      >
-        <thead>
-          <tr
-            style={{
-              backgroundColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-100)',
-            }}
+    <Markdown
+      components={{
+        // Strong/bold text
+        strong: ({ children }) => (
+          <strong
+            className="font-semibold"
+            style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
           >
-            {headerCells.map((cell, idx) => (
-              <th
-                key={idx}
-                className="px-3 py-2 text-left font-semibold whitespace-nowrap"
-                style={{
-                  color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
-                  borderBottom: `1px solid ${isDark ? 'var(--neutral-500)' : 'var(--neutral-200)'}`,
-                }}
-              >
-                <FormattedText text={cell.replace(/\*\*/g, '')} isDark={isDark} />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {dataRows.map((row, rowIdx) => (
-            <tr
-              key={rowIdx}
-              style={{
-                backgroundColor: rowIdx % 2 === 0
-                  ? (isDark ? 'var(--neutral-700)' : 'var(--neutral-50)')
-                  : (isDark ? 'var(--neutral-750)' : '#FFFFFF'),
-              }}
-            >
-              {row.map((cell, cellIdx) => (
-                <td
-                  key={cellIdx}
-                  className="px-3 py-2"
-                  style={{
-                    color: isDark ? 'var(--neutral-200)' : 'var(--neutral-700)',
-                    borderBottom: rowIdx < dataRows.length - 1
-                      ? `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--neutral-100)'}`
-                      : 'none',
-                  }}
-                >
-                  <FormattedText text={cell.replace(/\*\*/g, '')} isDark={isDark} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-interface FormattedLineProps {
-  line: string;
-  isDark: boolean;
-}
-
-function FormattedLine({ line, isDark }: FormattedLineProps) {
-  if (!line.trim()) return null;
-
-  if (line.match(/^[\s]*[-*•]\s/)) {
-    const indent = line.match(/^(\s*)/)?.[1].length || 0;
-    const text = line.replace(/^[\s]*[-*•]\s+/, '');
-    return (
-      <span className="flex gap-2 my-1" style={{ marginLeft: indent > 0 ? '16px' : 0 }}>
-        <span style={{ color: 'var(--primary)' }}>•</span>
-        <span className="flex-1">
-          <FormattedText text={text} isDark={isDark} />
-        </span>
-      </span>
-    );
-  }
-
-  if (line.match(/^-{3,}$/)) {
-    return (
-      <hr
-        className="my-3 border-0 h-px"
-        style={{ backgroundColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-200)' }}
-      />
-    );
-  }
-
-  return <FormattedText text={line} isDark={isDark} />;
-}
-
-interface FormattedTextProps {
-  text: string;
-  isDark: boolean;
-}
-
-function FormattedText({ text, isDark }: FormattedTextProps) {
-  const elements: React.ReactNode[] = [];
-  const regex = /(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
-
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(<span key={lastIndex}>{text.slice(lastIndex, match.index)}</span>);
-    }
-
-    const matchText = match[0];
-
-    if (matchText.startsWith('***') && matchText.endsWith('***')) {
-      elements.push(
-        <strong key={match.index} className="font-semibold italic">
-          {matchText.slice(3, -3)}
-        </strong>
-      );
-    } else if (matchText.startsWith('**') && matchText.endsWith('**')) {
-      elements.push(
-        <strong
-          key={match.index}
-          className="font-semibold"
-          style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
-        >
-          {matchText.slice(2, -2)}
-        </strong>
-      );
-    } else if (matchText.startsWith('*') && matchText.endsWith('*')) {
-      elements.push(
-        <em key={match.index} className="italic">
-          {matchText.slice(1, -1)}
-        </em>
-      );
-    } else if (matchText.startsWith('[')) {
-      const linkMatch = matchText.match(/\[([^\]]+)\]\(([^)]+)\)/);
-      if (linkMatch) {
-        elements.push(
+            {children}
+          </strong>
+        ),
+        // Italic text
+        em: ({ children }) => <em className="italic">{children}</em>,
+        // Links
+        a: ({ href, children }) => (
           <a
-            key={match.index}
-            href={linkMatch[2]}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:opacity-70 transition-opacity"
             style={{ color: 'var(--primary)' }}
           >
-            {linkMatch[1]}
+            {children}
           </a>
-        );
-      }
-    }
-
-    lastIndex = match.index + matchText.length;
-  }
-
-  if (lastIndex < text.length) {
-    elements.push(<span key={lastIndex}>{text.slice(lastIndex)}</span>);
-  }
-
-  return <>{elements.length > 0 ? elements : text}</>;
+        ),
+        // Unordered lists
+        ul: ({ children }) => <ul className="my-1 space-y-0.5">{children}</ul>,
+        // List items
+        li: ({ children }) => (
+          <li className="flex gap-2">
+            <span style={{ color: 'var(--primary)' }}>•</span>
+            <span className="flex-1">{children}</span>
+          </li>
+        ),
+        // Horizontal rule
+        hr: () => (
+          <hr
+            className="my-3 border-0 h-px"
+            style={{ backgroundColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-200)' }}
+          />
+        ),
+        // Paragraphs
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        // Tables
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-3 -mx-2">
+            <table
+              className="w-full text-[12px] border-collapse"
+              style={{
+                backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-50)',
+                borderRadius: '8px',
+                overflow: 'hidden',
+              }}
+            >
+              {children}
+            </table>
+          </div>
+        ),
+        thead: ({ children }) => (
+          <thead style={{ backgroundColor: isDark ? 'var(--neutral-600)' : 'var(--neutral-100)' }}>
+            {children}
+          </thead>
+        ),
+        th: ({ children }) => (
+          <th
+            className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+            style={{
+              color: isDark ? '#FFFFFF' : 'var(--neutral-900)',
+              borderBottom: `1px solid ${isDark ? 'var(--neutral-500)' : 'var(--neutral-200)'}`,
+            }}
+          >
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td
+            className="px-3 py-2"
+            style={{ color: isDark ? 'var(--neutral-200)' : 'var(--neutral-700)' }}
+          >
+            {children}
+          </td>
+        ),
+        // Code blocks
+        code: ({ children }) => (
+          <code
+            className="px-1.5 py-0.5 rounded text-[13px]"
+            style={{
+              backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+              color: isDark ? 'var(--neutral-200)' : 'var(--neutral-700)',
+            }}
+          >
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {processedContent}
+    </Markdown>
+  );
 }
