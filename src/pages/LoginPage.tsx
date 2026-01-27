@@ -3,15 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const VALID_LOGIN = 'brainform_demo_user';
+const VALID_PASSWORD = '$$$$$$brainform$$$$$$';
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [loginFocused, setLoginFocused] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/select');
+    setError('');
+
+    if (login === VALID_LOGIN && password === VALID_PASSWORD) {
+      localStorage.setItem('brainform_auth', 'true');
+      navigate('/select');
+    } else {
+      setError('Invalid login or password');
+    }
   };
 
   return (
@@ -158,6 +169,13 @@ export function LoginPage() {
                 }}
               />
             </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="text-red-500 text-sm text-center py-2">
+                {error}
+              </div>
+            )}
 
             {/* Submit button */}
             <button

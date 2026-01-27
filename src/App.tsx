@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 import { ThemeProvider } from '@/hooks/useTheme';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { IndustrySelectPage } from '@/pages/IndustrySelectPage';
 import { StorePage } from '@/pages/StorePage';
@@ -25,8 +26,16 @@ function App() {
             <LoginPage />
           </ThemeProvider>
         } />
-        <Route path="/select" element={<IndustrySelectPage />} />
-        <Route path="/demo/:industry" element={<StorePageWrapper />} />
+        <Route path="/select" element={
+          <ProtectedRoute>
+            <IndustrySelectPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/demo/:industry" element={
+          <ProtectedRoute>
+            <StorePageWrapper />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );
