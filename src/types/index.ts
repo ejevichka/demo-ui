@@ -25,6 +25,29 @@ export interface Product {
   discount?: string;
   description?: string;
   availability?: boolean;
+  reviewsCount?: number;
+  rating?: number; // 1-5
+}
+
+// Review types
+export interface Review {
+  id: string;
+  productId: string;
+  author: string;
+  avatar?: string;
+  rating: number; // 1-5
+  text: string;
+  date: string;
+  verified?: boolean;
+}
+
+export interface ReviewSummary {
+  productId: string;
+  overallRating: number;
+  totalReviews: number;
+  summary: string;
+  pros: string[];
+  cons: string[];
 }
 
 // Chat types
