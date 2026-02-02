@@ -897,16 +897,32 @@ export function AISearchBar() {
                       <Plus className="w-4 h-4" />
                     </motion.button>
 
-                    <button
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-                      style={{
-                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                        color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                      }}
-                    >
-                      <Radio className="w-4 h-4" />
-                      <span>Live</span>
-                    </button>
+                    {themeName === 'brainform' ? (
+                      <a
+                        href="https://este-lauder-voice-demo.web.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                        style={{
+                          backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                          color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                        }}
+                      >
+                        <Radio className="w-4 h-4" />
+                        <span>Live</span>
+                      </a>
+                    ) : (
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                        style={{
+                          backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                          color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                        }}
+                      >
+                        <Radio className="w-4 h-4" />
+                        <span>Live</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Auto-expanding textarea */}
@@ -1049,16 +1065,32 @@ export function AISearchBar() {
                       <Plus className="w-4 h-4" />
                     </motion.button>
 
-                    <button
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-                      style={{
-                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                        color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
-                      }}
-                    >
-                      <Radio className="w-4 h-4" />
-                      <span>Live</span>
-                    </button>
+                    {themeName === 'brainform' ? (
+                      <a
+                        href="https://este-lauder-voice-demo.web.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                        style={{
+                          backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                          color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                        }}
+                      >
+                        <Radio className="w-4 h-4" />
+                        <span>Live</span>
+                      </a>
+                    ) : (
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                        style={{
+                          backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                          color: isDark ? '#FFFFFF' : 'var(--neutral-700)',
+                        }}
+                      >
+                        <Radio className="w-4 h-4" />
+                        <span>Live</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
