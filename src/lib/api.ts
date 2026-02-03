@@ -1,5 +1,6 @@
 import type { ChatRequest, ChatMessage, Product } from '@/types';
 import { generateId } from './utils';
+import { createSSEParser } from './sseParser';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -34,41 +35,51 @@ export async function sendChatMessage(
     }
 
     const decoder = new TextDecoder();
+    const parser = createSSEParser();
     let fullMessage = '';
     let products: Product[] | undefined;
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Process any remaining buffered content
+        const results = parser.flush();
+        for (const result of results) {
+          if (result.content) {
+            fullMessage += result.content;
+            callbacks.onChunk(result.content);
+          }
+          // result.answer is the authoritative final version - always use it
+          if (result.fullAnswer) {
+            fullMessage = result.fullAnswer;
+          }
+        }
+        break;
+      }
 
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
+      // Use SSE parser with proper buffering
+      const results = parser.processChunk(chunk);
 
-          if (data === '[DONE]') {
-            callbacks.onComplete(fullMessage, products);
-            return;
+      for (const result of results) {
+        // Extract products if present
+        if (result.products) {
+          products = result.products as Product[];
+        }
+
+        if (result.done) {
+          // result.answer is the authoritative final version - always use it
+          if (result.fullAnswer) {
+            fullMessage = result.fullAnswer;
           }
+          callbacks.onComplete(fullMessage, products);
+          return;
+        }
 
-          try {
-            const parsed = JSON.parse(data);
-
-            if (parsed.content) {
-              fullMessage += parsed.content;
-              callbacks.onChunk(parsed.content);
-            }
-
-            if (parsed.products) {
-              products = parsed.products;
-            }
-          } catch {
-            // Not JSON, treat as plain text chunk
-            fullMessage += data;
-            callbacks.onChunk(data);
-          }
+        if (result.content) {
+          fullMessage += result.content;
+          callbacks.onChunk(result.content);
         }
       }
     }
