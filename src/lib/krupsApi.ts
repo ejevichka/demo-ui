@@ -1,4 +1,5 @@
 import type { Product } from '@/types';
+import { createSSEParser } from './sseParser';
 
 // KRUPS API Configuration - always use proxy to avoid CORS
 const KRUPS_API_URL = '/krups-api';
@@ -519,6 +520,7 @@ async function generateAnswerStream(
   }
 
   const decoder = new TextDecoder();
+  const parser = createSSEParser();
   let fullMessage = '';
 
   console.log('[KRUPS API] Starting to read stream...');
@@ -544,67 +546,41 @@ async function generateAnswerStream(
 
       if (done) {
         console.log('[KRUPS API] Stream done, fullMessage length:', fullMessage.length);
+        // Process any remaining buffered content
+        const results = parser.flush();
+        for (const result of results) {
+          if (result.content) {
+            fullMessage += result.content;
+            callbacks.onChunk(result.content);
+          }
+          // result.answer is the authoritative final version - always use it
+          if (result.fullAnswer) {
+            fullMessage = result.fullAnswer;
+          }
+        }
         break;
       }
 
       const chunk = decoder.decode(value, { stream: true });
       console.log('[KRUPS API] Raw chunk:', chunk.substring(0, 200));
-      const lines = chunk.split('\n');
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          console.log('[KRUPS API] SSE data:', data.substring(0, 100));
+      // Use SSE parser with proper buffering
+      const results = parser.processChunk(chunk);
 
-          if (data === '[DONE]') {
-            const session = getCurrentSession();
-            callbacks.onComplete(fullMessage, session.products);
-            return;
+      for (const result of results) {
+        if (result.done) {
+          // result.answer is the authoritative final version - always use it
+          if (result.fullAnswer) {
+            fullMessage = result.fullAnswer;
           }
+          const session = getCurrentSession();
+          callbacks.onComplete(fullMessage, session.products);
+          return;
+        }
 
-          try {
-            const parsed = JSON.parse(data);
-
-            // Handle different response formats:
-            // 1. {"message": "chunk"} - streaming chunks
-            // 2. {"type": "content", "text": "chunk"} - documented format
-            // 3. {"result": {"answer": "..."}} - final complete response
-            // 4. {"type": "done"} - stream end signal
-
-            if (parsed.message) {
-              // Actual API format: {"message": "chunk"}
-              fullMessage += parsed.message;
-              callbacks.onChunk(parsed.message);
-            } else if (parsed.type === 'content' && parsed.text) {
-              // Documented format
-              fullMessage += parsed.text;
-              callbacks.onChunk(parsed.text);
-            } else if (parsed.result?.answer) {
-              // Final response with complete answer - use it if we haven't accumulated anything
-              if (!fullMessage) {
-                fullMessage = parsed.result.answer;
-              }
-              const session = getCurrentSession();
-              callbacks.onComplete(fullMessage, session.products);
-              return;
-            } else if (parsed.type === 'done') {
-              const session = getCurrentSession();
-              callbacks.onComplete(fullMessage, session.products);
-              return;
-            } else if (parsed.content) {
-              fullMessage += parsed.content;
-              callbacks.onChunk(parsed.content);
-            } else {
-              // Log unhandled format for debugging
-              console.warn('[KRUPS API] Unhandled SSE format:', JSON.stringify(parsed));
-            }
-          } catch {
-            // Not JSON, might be plain text
-            if (data.trim()) {
-              fullMessage += data;
-              callbacks.onChunk(data);
-            }
-          }
+        if (result.content) {
+          fullMessage += result.content;
+          callbacks.onChunk(result.content);
         }
       }
     }

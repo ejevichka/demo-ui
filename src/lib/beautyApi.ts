@@ -1,4 +1,5 @@
 import type { Product } from '@/types';
+import { createSSEParser } from './sseParser';
 
 // Beauty (Cosmetics) API Configuration - always use proxy to avoid CORS
 const BEAUTY_API_URL = '/beauty-api';
@@ -475,6 +476,7 @@ async function generateAnswerStream(
   }
 
   const decoder = new TextDecoder();
+  const parser = createSSEParser();
   let fullMessage = '';
 
   console.log('[BEAUTY API] Starting to read stream...');
@@ -483,52 +485,40 @@ async function generateAnswerStream(
     const { done, value } = await reader.read();
     if (done) {
       console.log('[BEAUTY API] Stream done, fullMessage length:', fullMessage.length);
+      // Process any remaining buffered content
+      const results = parser.flush();
+      for (const result of results) {
+        if (result.content) {
+          fullMessage += result.content;
+          callbacks.onChunk(result.content);
+        }
+        // result.answer is the authoritative final version - always use it
+        if (result.fullAnswer) {
+          fullMessage = result.fullAnswer;
+        }
+      }
       break;
     }
 
     const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n');
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
+    // Use SSE parser with proper buffering
+    const results = parser.processChunk(chunk);
 
-        if (data === '[DONE]') {
-          const session = getCurrentSession();
-          callbacks.onComplete(fullMessage, session.products);
-          return;
+    for (const result of results) {
+      if (result.done) {
+        // result.answer is the authoritative final version - always use it
+        if (result.fullAnswer) {
+          fullMessage = result.fullAnswer;
         }
+        const session = getCurrentSession();
+        callbacks.onComplete(fullMessage, session.products);
+        return;
+      }
 
-        try {
-          const parsed = JSON.parse(data);
-
-          if (parsed.message) {
-            fullMessage += parsed.message;
-            callbacks.onChunk(parsed.message);
-          } else if (parsed.type === 'content' && parsed.text) {
-            fullMessage += parsed.text;
-            callbacks.onChunk(parsed.text);
-          } else if (parsed.result?.answer) {
-            if (!fullMessage) {
-              fullMessage = parsed.result.answer;
-            }
-            const session = getCurrentSession();
-            callbacks.onComplete(fullMessage, session.products);
-            return;
-          } else if (parsed.type === 'done') {
-            const session = getCurrentSession();
-            callbacks.onComplete(fullMessage, session.products);
-            return;
-          } else if (parsed.content) {
-            fullMessage += parsed.content;
-            callbacks.onChunk(parsed.content);
-          }
-        } catch {
-          if (data.trim()) {
-            fullMessage += data;
-            callbacks.onChunk(data);
-          }
-        }
+      if (result.content) {
+        fullMessage += result.content;
+        callbacks.onChunk(result.content);
       }
     }
   }
