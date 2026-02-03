@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { ChatMessage as ChatMessageType, Product } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import { submitFeedback } from '@/lib/feedbackApi';
@@ -553,6 +554,7 @@ function FormattedTextContent({ content, isDark }: { content: string; isDark: bo
 
   return (
     <Markdown
+      remarkPlugins={[remarkGfm]}
       components={{
         // Strong/bold text
         strong: ({ children }) => (
