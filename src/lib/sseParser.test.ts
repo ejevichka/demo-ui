@@ -145,6 +145,39 @@ describe('SSE Parser', () => {
     });
   });
 
+  describe('displayedProducts extraction', () => {
+    it('should extract displayedProducts from result object', () => {
+      const parser = createSSEParser();
+      const products = [
+        { id: '1', title: 'Product 1', price: 100, imageUrl: 'http://example.com/1.jpg' },
+        { id: '2', title: 'Product 2', price: 200, imageUrl: 'http://example.com/2.jpg' },
+      ];
+
+      const results = parser.processChunk(
+        `data: {"result":{"answer":"Here are products","displayedProducts":${JSON.stringify(products)}}}\n`
+      );
+
+      expect(results).toHaveLength(1);
+      expect(results[0].done).toBe(true);
+      expect(results[0].fullAnswer).toBe('Here are products');
+      expect(results[0].products).toHaveLength(2);
+      expect(results[0].products![0]).toEqual(products[0]);
+    });
+
+    it('should prioritize displayedProducts over root-level products', () => {
+      const parser = createSSEParser();
+      const displayedProducts = [{ id: 'displayed', title: 'From displayedProducts' }];
+      const rootProducts = [{ id: 'root', title: 'From root' }];
+
+      const results = parser.processChunk(
+        `data: {"result":{"answer":"Test","displayedProducts":${JSON.stringify(displayedProducts)}},"products":${JSON.stringify(rootProducts)}}\n`
+      );
+
+      expect(results[0].products).toHaveLength(1);
+      expect(results[0].products![0].id).toBe('displayed');
+    });
+  });
+
   describe('Bug reproduction: JSON leak scenario', () => {
     it('should NOT leak JSON when chunk splits in middle of JSON object', () => {
       const parser = createSSEParser();

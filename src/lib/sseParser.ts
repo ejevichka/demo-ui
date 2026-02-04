@@ -150,10 +150,21 @@ function extractContent(parsed: Record<string, unknown>): SSEParseResult | null 
     return { content: parsed.content, done: false, fullAnswer: null, products };
   }
 
-  // Format 4: {"result": {"answer": "full answer"}} - final complete response
+  // Format 4: {"result": {"answer": "...", "displayedProducts": [...]}} - final complete response
   const result = parsed.result as Record<string, unknown> | undefined;
   if (result && typeof result.answer === 'string') {
-    return { content: null, done: true, fullAnswer: result.answer, products };
+    // Extract displayedProducts from result (new API format)
+    const displayedProducts = Array.isArray(result.displayedProducts)
+      ? result.displayedProducts
+      : undefined;
+
+    // Prioritize displayedProducts over root-level products
+    return {
+      content: null,
+      done: true,
+      fullAnswer: result.answer,
+      products: displayedProducts || products
+    };
   }
 
   // Format 5: {"type": "done"} - stream end signal
