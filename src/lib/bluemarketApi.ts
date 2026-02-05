@@ -346,6 +346,13 @@ function transformProduct(doc: BluemarketProduct): Product {
   };
 }
 
+/**
+ * Transform array of products from SSE displayedProducts
+ */
+function transformSSEProducts(rawProducts: unknown[]): Product[] {
+  return rawProducts.map(p => transformProduct(p as BluemarketProduct));
+}
+
 // ============================================
 // Session Management
 // ============================================
@@ -471,6 +478,8 @@ async function generateAnswerStream(
   const decoder = new TextDecoder();
   const parser = createSSEParser();
   let fullMessage = '';
+  // Track products from SSE stream (from result.displayedProducts)
+  let sseProducts: Product[] | undefined;
 
   console.log('[BLUEMARKET API] Starting to read stream...');
 
@@ -484,6 +493,11 @@ async function generateAnswerStream(
         if (result.content) {
           fullMessage += result.content;
           callbacks.onChunk(result.content);
+        }
+        // Extract products from SSE if present
+        if (result.products && result.products.length > 0) {
+          sseProducts = transformSSEProducts(result.products);
+          console.log('[BLUEMARKET API] Got products from SSE flush:', sseProducts.length);
         }
         // result.answer is the authoritative final version - always use it
         if (result.fullAnswer) {
@@ -499,13 +513,22 @@ async function generateAnswerStream(
     const results = parser.processChunk(chunk);
 
     for (const result of results) {
+      // Extract products from SSE if present (from result.displayedProducts)
+      if (result.products && result.products.length > 0) {
+        sseProducts = transformSSEProducts(result.products);
+        console.log('[BLUEMARKET API] Got products from SSE:', sseProducts.length);
+      }
+
       if (result.done) {
         // result.answer is the authoritative final version - always use it
         if (result.fullAnswer) {
           fullMessage = result.fullAnswer;
         }
+        // Use SSE products (displayedProducts) if available, fallback to session.products
         const session = getCurrentSession();
-        callbacks.onComplete(fullMessage, session.products);
+        const finalProducts = sseProducts || session.products;
+        console.log('[BLUEMARKET API] Products - SSE:', sseProducts?.length ?? 0, 'session:', session.products?.length ?? 0);
+        callbacks.onComplete(fullMessage, finalProducts);
         return;
       }
 
@@ -518,7 +541,9 @@ async function generateAnswerStream(
 
   console.log('[BLUEMARKET API] Stream complete');
   const session = getCurrentSession();
-  callbacks.onComplete(fullMessage, session.products);
+  const finalProducts = sseProducts || session.products;
+  console.log('[BLUEMARKET API] Final products - SSE:', sseProducts?.length ?? 0, 'session:', session.products?.length ?? 0);
+  callbacks.onComplete(fullMessage, finalProducts);
 }
 
 // ============================================
