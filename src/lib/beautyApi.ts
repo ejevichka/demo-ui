@@ -531,9 +531,10 @@ async function generateAnswerStream(
         if (result.fullAnswer) {
           fullMessage = result.fullAnswer;
         }
-        // Only use products explicitly provided by backend in displayedProducts
-        console.log('[BEAUTY API] Products from SSE:', sseProducts?.length ?? 0);
-        callbacks.onComplete(fullMessage, sseProducts);
+        // Use SSE displayedProducts if available, fallback to session products from /findProducts
+        const session = getCurrentSession();
+        const finalProducts = sseProducts || session.products;
+        callbacks.onComplete(fullMessage, finalProducts);
         return;
       }
 
@@ -545,9 +546,9 @@ async function generateAnswerStream(
   }
 
   console.log('[BEAUTY API] Stream complete');
-  // Only use products explicitly provided by backend in displayedProducts
-  console.log('[BEAUTY API] Final products from SSE:', sseProducts?.length ?? 0);
-  callbacks.onComplete(fullMessage, sseProducts);
+  const session = getCurrentSession();
+  const finalProducts = sseProducts || session.products;
+  callbacks.onComplete(fullMessage, finalProducts);
 }
 
 // ============================================

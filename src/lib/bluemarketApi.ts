@@ -524,9 +524,11 @@ async function generateAnswerStream(
         if (result.fullAnswer) {
           fullMessage = result.fullAnswer;
         }
-        // Only use products explicitly provided by backend in displayedProducts
-        console.log('[BLUEMARKET API] Products from SSE:', sseProducts?.length ?? 0);
-        callbacks.onComplete(fullMessage, sseProducts);
+        // Use SSE products (displayedProducts) if available, fallback to session.products
+        const session = getCurrentSession();
+        const finalProducts = sseProducts || session.products;
+        console.log('[BLUEMARKET API] Products - SSE:', sseProducts?.length ?? 0, 'session:', session.products?.length ?? 0);
+        callbacks.onComplete(fullMessage, finalProducts);
         return;
       }
 
@@ -538,9 +540,10 @@ async function generateAnswerStream(
   }
 
   console.log('[BLUEMARKET API] Stream complete');
-  // Only use products explicitly provided by backend in displayedProducts
-  console.log('[BLUEMARKET API] Final products from SSE:', sseProducts?.length ?? 0);
-  callbacks.onComplete(fullMessage, sseProducts);
+  const session = getCurrentSession();
+  const finalProducts = sseProducts || session.products;
+  console.log('[BLUEMARKET API] Final products - SSE:', sseProducts?.length ?? 0, 'session:', session.products?.length ?? 0);
+  callbacks.onComplete(fullMessage, finalProducts);
 }
 
 // ============================================

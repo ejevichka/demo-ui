@@ -594,9 +594,10 @@ async function generateAnswerStream(
           if (result.fullAnswer) {
             fullMessage = result.fullAnswer;
           }
-          // Only use products explicitly provided by backend in displayedProducts
-          console.log('[KRUPS API] Products from SSE:', sseProducts?.length ?? 0);
-          callbacks.onComplete(fullMessage, sseProducts);
+          // Use SSE displayedProducts if available, fallback to session products from /findProducts
+          const session = getCurrentSession();
+          const finalProducts = sseProducts || session.products;
+          callbacks.onComplete(fullMessage, finalProducts);
           return;
         }
 
@@ -611,9 +612,9 @@ async function generateAnswerStream(
   }
 
   console.log('[KRUPS API] Stream complete, total message:', fullMessage.substring(0, 100));
-  // Only use products explicitly provided by backend in displayedProducts
-  console.log('[KRUPS API] Final products from SSE:', sseProducts?.length ?? 0);
-  callbacks.onComplete(fullMessage, sseProducts);
+  const session = getCurrentSession();
+  const finalProducts = sseProducts || session.products;
+  callbacks.onComplete(fullMessage, finalProducts);
 }
 
 // ============================================
