@@ -4,6 +4,7 @@ import type { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { ReviewSummaryModal } from './ReviewSummaryModal';
+import { ProductBuyModal } from './ProductBuyModal';
 
 interface ProductCardProps {
   product: Product;
@@ -13,10 +14,16 @@ export function ProductCard({ product }: ProductCardProps) {
   const { theme } = useTheme();
   const isDark = theme.isDark;
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
 
   const handleAISummaryClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsReviewModalOpen(true);
+  };
+
+  const handleBuyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsBuyModalOpen(true);
   };
 
   return (
@@ -86,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Buy button */}
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleBuyClick}
             className="w-full h-9 rounded text-[14px] font-medium transition-opacity hover:opacity-90"
             style={{
               backgroundColor: 'var(--primary)',
@@ -102,6 +109,13 @@ export function ProductCard({ product }: ProductCardProps) {
       <ReviewSummaryModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
+        product={product}
+      />
+
+      {/* Product Buy Modal with AI Assistant */}
+      <ProductBuyModal
+        isOpen={isBuyModalOpen}
+        onClose={() => setIsBuyModalOpen(false)}
         product={product}
       />
     </>
