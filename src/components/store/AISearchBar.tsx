@@ -134,12 +134,77 @@ export function AISearchBar() {
   const isExpanded = stage === 'expanded';
   const suggestedQuestions = suggestedQuestionsByTheme[themeName] || suggestedQuestionsByTheme.brownmarket;
 
-  // Listen for openAIChat event from AI Agent button
+  // Store pending question and newChat flag from openAIChat event
+  // Using ref instead of state to avoid re-render when clearing, which would cancel the timer
+  const pendingActionRef = useRef<{
+    question: string;
+    newChat: boolean;
+  } | null>(null);
+  // Trigger counter to force effect re-run when new action arrives
+  const [pendingActionTrigger, setPendingActionTrigger] = useState(0);
+
+  // Listen for openAIChat event from AI Agent button (can include initial question)
   useEffect(() => {
-    const handleOpenChat = () => setStage('inputBar');
+    const handleOpenChat = (e: Event) => {
+      const customEvent = e as CustomEvent<{ question?: string; autoSend?: boolean; newChat?: boolean }>;
+      const question = customEvent.detail?.question;
+      const autoSend = customEvent.detail?.autoSend ?? true;
+      const newChat = customEvent.detail?.newChat ?? false;
+
+      if (question && autoSend) {
+        // Store question and newChat flag in ref and trigger processing
+        pendingActionRef.current = { question, newChat };
+        setPendingActionTrigger(prev => prev + 1);
+        setStage('expanded');
+      } else if (question) {
+        // Just open with prefilled question but don't send
+        if (newChat) {
+          setMessages([]);
+        }
+        setStage('expanded');
+        setInputValue(question);
+      } else {
+        setStage('inputBar');
+      }
+    };
     window.addEventListener('openAIChat', handleOpenChat);
     return () => window.removeEventListener('openAIChat', handleOpenChat);
   }, []);
+
+  // Process pending action - this effect has themeName as dependency so it runs with correct theme
+  useEffect(() => {
+    const pendingAction = pendingActionRef.current;
+    if (!pendingAction || stage !== 'expanded') return;
+
+    const { question, newChat } = pendingAction;
+
+    // Clear pending action immediately from ref (doesn't cause re-render)
+    pendingActionRef.current = null;
+
+    // Reset session if newChat requested
+    if (newChat) {
+      // Clear messages for current theme
+      setMessages([]);
+      setApiSuggestions([]);
+      // Reset API session based on current theme
+      if (themeName === 'brownmarket') {
+        resetKrupsSession();
+      } else if (themeName === 'bluemarket') {
+        resetBluemarketSession();
+      } else if (themeName === 'brainform') {
+        resetBeautySession();
+      }
+    }
+
+    // Send the question after a small delay for state to settle
+    const timer = setTimeout(() => {
+      handleSend(question);
+    }, 150);
+
+    return () => clearTimeout(timer);
+    // pendingActionTrigger is used to trigger this effect when a new action arrives
+    // themeName ensures correct API is used for the current theme
+  }, [pendingActionTrigger, stage, themeName]);
 
   // Focus input when stage changes (only on actual transitions, not initial mount)
   useEffect(() => {

@@ -13,6 +13,8 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    cors: true, // Allow all origins for development
+    allowedHosts: ['localhost', '.ngrok-free.app', '.ngrok.io'],
     proxy: {
       '/krups-api': {
         target: 'https://api-g3d23mkdnq-ew.a.run.app',
@@ -22,8 +24,21 @@ export default defineConfig({
           proxy.on('proxyReq', (_proxyReq, req) => {
             console.log('[VITE PROXY KRUPS] >>> ', req.method, req.url);
           });
-          proxy.on('proxyRes', (proxyRes, req) => {
+          proxy.on('proxyRes', (proxyRes, req, res) => {
             console.log('[VITE PROXY KRUPS] <<<', proxyRes.statusCode, req.url);
+            // Add CORS headers for Shopify
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+          });
+          // Handle preflight OPTIONS requests
+          proxy.on('error', (err, _req, res) => {
+            console.error('[VITE PROXY KRUPS] Error:', err.message);
+            if (res && 'writeHead' in res) {
+              res.writeHead(500, { 'Content-Type': 'text/plain' });
+              res.end('Proxy error');
+            }
           });
         },
       },
