@@ -55,7 +55,7 @@ export function IndustrySelectPage() {
               className="text-[28px] sm:text-[36px] md:text-[48px] font-bold mt-2"
               style={{ color: '#1A1726' }}
             >
-              Choose industry
+              Choose an industry
             </h1>
           </div>
 
