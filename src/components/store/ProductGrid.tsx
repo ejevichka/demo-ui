@@ -8,10 +8,12 @@ export function ProductGrid() {
 
   return (
     <section className="container mx-auto px-4 py-8">
-      {/* 4 columns grid matching Figma design */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* Centered flex layout for products */}
+      <div className="flex flex-wrap justify-center gap-6">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} className="w-[calc(50%-12px)] md:w-[280px]">
+            <ProductCard product={product} />
+          </div>
         ))}
       </div>
     </section>

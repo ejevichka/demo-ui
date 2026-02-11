@@ -19,6 +19,7 @@ export interface Product {
   id: string;
   title: string;
   image: string;
+  images?: string[]; // Additional images for gallery
   oldPrice: number;
   newPrice: number;
   currency: string;
