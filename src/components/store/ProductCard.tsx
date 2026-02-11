@@ -29,6 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <>
       <article
+        onClick={() => setIsBuyModalOpen(true)}
         className="group cursor-pointer rounded-lg p-4 flex flex-col gap-4"
         style={{
           backgroundColor: isDark ? 'var(--neutral-900)' : '#FFFFFF',

@@ -33,8 +33,8 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
   const summary: ReviewSummary | undefined = reviewSummariesByTheme[themeName]?.[product.id];
   const reviewCount = summary?.totalReviews ?? product.reviewsCount ?? reviews.length;
 
-  // Generate multiple images for gallery (using same image as placeholder)
-  const images = Array(6).fill(product.image);
+  // Use product images array or fallback to main image
+  const images = product.images?.length ? product.images : [product.image];
 
   // Product name for context in questions
   const productName = product.title;
@@ -269,7 +269,7 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
                       className="text-lg font-semibold mb-3"
                       style={{ color: 'var(--primary)' }}
                     >
-                      Your AI Shopping Assistent
+                      Ask AI Shopping Assistant
                     </h3>
 
                     <p
