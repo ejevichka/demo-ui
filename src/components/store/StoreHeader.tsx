@@ -62,6 +62,7 @@ export function StoreHeader() {
 
             {/* AI Agent Button */}
             <button
+              data-onboarding="ai-shopping"
               onClick={() => window.dispatchEvent(new CustomEvent('openAIChat'))}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
               style={{

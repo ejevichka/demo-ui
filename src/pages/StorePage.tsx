@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import {
@@ -8,9 +9,19 @@ import {
   AISearchBar,
   ThemeSwitcher,
 } from '@/components/store';
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
+import { hasSeenOnboarding } from '@/lib/onboarding';
 
 export function StorePage() {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
+  const [showChatTooltips, setShowChatTooltips] = useState(false);
+
+  const handleOnboardingComplete = () => {
+    // Step 1 complete, now show tooltips inside chat
+    setShowOnboarding(false);
+    setShowChatTooltips(true);
+  };
 
   return (
     <div className="min-h-screen">
@@ -20,7 +31,10 @@ export function StorePage() {
       <ProductGrid />
 
       {/* Floating AI Search Bar with integrated chat */}
-      <AISearchBar />
+      <AISearchBar
+        showOnboardingTooltips={showChatTooltips}
+        onOnboardingComplete={() => setShowChatTooltips(false)}
+      />
 
       {/* Theme Switcher (for demo) */}
       <ThemeSwitcher />
@@ -41,6 +55,11 @@ export function StorePage() {
 
       {/* Bottom padding for floating bar */}
       <div className="h-24" />
+
+      {/* Onboarding tour for new users */}
+      {showOnboarding && (
+        <OnboardingTour onComplete={handleOnboardingComplete} />
+      )}
     </div>
   );
 }
