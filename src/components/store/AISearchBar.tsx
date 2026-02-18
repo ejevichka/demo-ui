@@ -534,13 +534,10 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
             ? `0 32px 64px rgba(0, 0, 0, 0.25), 0 0 80px rgba(${primaryGlow}, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)`
             : isInputBar
             ? `0 16px 48px rgba(0, 0, 0, 0.2), 0 0 40px rgba(${primaryGlow}, 0.15)`
-            : `0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0px rgba(${primaryGlow}, 0)`,
+            : 'none',
         }}
-        whileHover={isCollapsed ? {
-          scale: 1.1,
-          boxShadow: `0 12px 40px rgba(0, 0, 0, 0.25), 0 0 30px rgba(${primaryGlow}, 0.4)`,
-        } : undefined}
-        whileTap={isCollapsed ? { scale: 0.95 } : undefined}
+        whileHover={undefined}
+        whileTap={undefined}
         transition={{
           layout: isExpanded ? SPRING_MORPH : SPRING_SLIDE,
           boxShadow: {
