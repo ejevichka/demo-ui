@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Suggestions Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 320px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .product-card img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .product-card h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .product-card .price {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2563eb;
+      margin-bottom: 12px;
+    }
+    .product-card .buy-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .log {
+      margin-top: 20px;
+      padding: 10px;
+      background: #1e1e1e;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 12px;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Product Suggestions Widget Test</h1>
+  
+  <div class="product-card">
+    <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=200&fit=crop" alt="Coffee Machine">
+    <h2>KRUPS Espresso Machine</h2>
+    <p>Professional espresso machine with 15 bar pressure and built-in grinder.</p>
+    <div class="price">€599</div>
+    <button class="buy-btn">Buy Now</button>
+    
+    <bf-product-suggestions
+      product-id="KRUPS-001"
+      product-name="KRUPS Espresso Machine"
+      product-description="Professional espresso machine with 15 bar pressure and built-in grinder"
+      suggestions='["What coffee beans work best?", "How to clean it?", "Warranty info"]'
+      primary-color="#2563eb"
+    ></bf-product-suggestions>
+  </div>
+
+  <div class="log" id="log">Event log:</div>
+
+  <!-- Load widgets as ES modules -->
+  <script type="module" src="/product-suggestions.js"></script>
+  <script type="module" src="/chat-widget-v3.js"></script>
+
+  <!-- Chat widget -->
+  <brainform-chat
+    api-url="https://example.com"
+    primary-color="#2563eb"
+    initial-stage="collapsed"
+    welcome-message="Hello! How can I help you with your purchase?"
+  ></brainform-chat>
+
+  <script>
+    // Log bf:open-chat events
+    window.addEventListener('bf:open-chat', (e) => {
+      const log = document.getElementById('log');
+      log.innerHTML += '\n[bf:open-chat] ' + JSON.stringify(e.detail, null, 2);
+      log.scrollTop = log.scrollHeight;
+    });
+  </script>
+</body>
+</html>

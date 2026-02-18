@@ -3,6 +3,7 @@ import { MessageSquareText } from 'lucide-react';
 import type { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
+import { analytics } from '@/lib/analytics';
 import { ReviewSummaryModal } from './ReviewSummaryModal';
 import { ProductBuyModal } from './ProductBuyModal';
 
@@ -11,7 +12,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { theme } = useTheme();
+  const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
@@ -23,13 +24,21 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleBuyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Track product view
+    analytics.trackProductView(themeName, product.id, product.title);
+    setIsBuyModalOpen(true);
+  };
+
+  const handleCardClick = () => {
+    // Track product view
+    analytics.trackProductView(themeName, product.id, product.title);
     setIsBuyModalOpen(true);
   };
 
   return (
     <>
       <article
-        onClick={() => setIsBuyModalOpen(true)}
+        onClick={handleCardClick}
         className="group cursor-pointer rounded-lg p-4 flex flex-col gap-4"
         style={{
           backgroundColor: isDark ? 'var(--neutral-900)' : '#FFFFFF',
