@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
+import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Radio, History, Trash2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { analytics } from '@/lib/analytics';
@@ -603,12 +603,7 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
                 color: 'var(--primary-foreground)',
               }}
             >
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-6 h-6" />
-              </motion.div>
+              <img src="/logo.svg" alt="AI" className="w-7 h-7" />
             </motion.div>
           )}
 
@@ -632,10 +627,10 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
             >
               {/* AI Icon */}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                style={{ backgroundColor: 'var(--primary)' }}
               >
-                <Sparkles className="w-4 h-4" />
+                <img src="/logo.svg" alt="AI" className="w-5 h-5" />
               </div>
 
               {/* Input */}
