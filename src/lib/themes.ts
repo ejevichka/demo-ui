@@ -60,9 +60,9 @@ export const themes: Record<string, ThemeConfig> = {
   },
   brownmarket: {
     id: 'brownmarket',
-    name: 'KRUPS',
-    storeName: 'KRUPS',
-    logoIcon: 'KRUPS',
+    name: 'Coffee Machines',
+    storeName: 'Coffee Machines',
+    logoIcon: 'Coffee Machines',
     navItems: ['Automatic Machines', 'Espresso Machines', 'Drip Coffee Makers', 'Coffee Grinders', 'Capsule Machines', 'Accessories', 'Promotions'],
     heroTitle: 'Perfect milk foam with one touch',
     heroSubtitle: 'New automatic coffee machine KRUPS Sensation Milk',

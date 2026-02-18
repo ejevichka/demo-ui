@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopify Integration Test - KRUPS Store</title>
+  <style>
+    /* Simulate Shopify Dawn theme styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Header */
+    .header {
+      background: #1a1a1a;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #d97706;
+    }
+
+    .nav {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .nav a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      color: #d97706;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Products Grid */
+    .products-section {
+      padding: 3rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .products-section h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.8rem;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .product-card {
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background: #f5f5f5;
+    }
+
+    .product-info {
+      padding: 1rem;
+    }
+
+    .product-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-price {
+      color: #d97706;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .product-old-price {
+      color: #999;
+      text-decoration: line-through;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+    }
+
+    .add-to-cart {
+      width: 100%;
+      padding: 0.75rem;
+      background: #d97706;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+
+    .add-to-cart:hover {
+      background: #b45309;
+    }
+
+    /* Footer */
+    .footer {
+      background: #1a1a1a;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    /* Banner for testing info */
+    .test-banner {
+      background: #fef3c7;
+      border-bottom: 2px solid #d97706;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .test-banner code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+      }
+
+      .hero {
+        padding: 2rem 1rem;
+      }
+
+      .hero h1 {
+        font-size: 1.75rem;
+      }
+
+      .hero p {
+        font-size: 1rem;
+      }
+
+      .products-section {
+        padding: 2rem 1rem;
+      }
+
+      .products-section h2 {
+        font-size: 1.5rem;
+      }
+
+      .products-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .test-banner {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+      }
+
+      .footer {
+        padding: 1.5rem 1rem;
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+      .nav {
+        font-size: 0.9rem;
+        gap: 0.75rem;
+      }
+
+      .hero h1 {
+        font-size: 1.5rem;
+      }
+
+      .product-card img {
+        height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Test Info Banner -->
+  <div class="test-banner">
+    🧪 <strong>Shopify Integration Test</strong> —
+    This page simulates a Shopify store to test the Brainform chat widget integration.
+    Widget loaded from: <code>/chat-widget-v3.js</code>
+  </div>
+
+  <!-- Shopify-like Header -->
+  <header class="header">
+    <div class="logo">KRUPS</div>
+    <nav class="nav">
+      <a href="#">Coffee Machines</a>
+      <a href="#">Accessories</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>Premium Coffee Machines</h1>
+    <p>Discover the perfect coffee experience with KRUPS automatic and capsule machines. German engineering meets Italian passion.</p>
+  </section>
+
+  <!-- Products Section -->
+  <section class="products-section">
+    <h2>Featured Products</h2>
+    <div class="products-grid">
+      <div class="product-card">
+        <img src="https://static.insales-cdn.com/images/products/1/7456/1000103200/large_frame_44.webp" alt="KRUPS Evidence">
+        <div class="product-info">
+          <div class="product-title">Automatic Coffee Machine KRUPS EVIDENCE EA89W410</div>
+          <div>
+            <span class="product-price">1,000 €</span>
+            <span class="product-old-price">1,400 €</span>
+          </div>
+          <button class="add-to-cart">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <img src="https://static.insales-cdn.com/images/products/1/2009/2410211289/large_xp801t10_1.webp" alt="KRUPS Precision">
+        <div class="product-info">
+          <div class="product-title">Coffee Station KRUPS Precision XP801T10</div>
+          <div>
+            <span class="product-price">700 €</span>
+            <span class="product-old-price">1,000 €</span>
+          </div>
+          <button class="add-to-cart">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <img src="https://static.insales-cdn.com/images/products/1/4903/917000999/large_ea910e10_2.webp" alt="KRUPS Nespresso">
+        <div class="product-info">
+          <div class="product-title">Capsule Coffee Machine KRUPS Nespresso Atelier XN890810</div>
+          <div>
+            <span class="product-price">500 €</span>
+            <span class="product-old-price">700 €</span>
+          </div>
+          <button class="add-to-cart">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <img src="https://static.insales-cdn.com/images/products/1/6962/1000101682/large_frame_43.webp" alt="KRUPS Opio">
+        <div class="product-info">
+          <div class="product-title">Espresso Machine KRUPS Opio XP320830</div>
+          <div>
+            <span class="product-price">180 €</span>
+            <span class="product-old-price">275 €</span>
+          </div>
+          <button class="add-to-cart">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2024 KRUPS Store. This is a test page for widget integration.</p>
+  </footer>
+
+  <!--
+    ============================================
+    BRAINFORM CHAT WIDGET INTEGRATION
+    ============================================
+    This is exactly how it would be added to Shopify's theme.liquid
+    Just before </body> tag
+  -->
+  <script type="module" src="/chat-widget-v3.js"></script>
+  <brainform-chat
+    api-url="/krups-api"
+    theme="krups"
+    captcha-site-key="ysc1_gctedGnclHPSnbZCdNP2d7cFOYGzNDMJFVCVlzdR37538194"
+    primary-color="#d97706"
+    position="bottom-right"
+    initial-stage="collapsed"
+    expand-position="left"
+    placeholder="Чем могу помочь?"
+    welcome-message="Привет! Я AI-ассистент KRUPS. Задайте мне вопрос о кофемашинах."
+  ></brainform-chat>
+
+</body>
+</html>

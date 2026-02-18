@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { analytics } from '@/lib/analytics';
 import type { ThemeName } from '@/types';
 
 interface Industry {
@@ -32,6 +33,8 @@ export function IndustrySelectPage() {
   const navigate = useNavigate();
 
   const handleSelect = (industry: Industry) => {
+    // Track industry selection
+    analytics.trackIndustrySelect(industry.id);
     navigate(`/demo/${industry.id}`);
   };
 

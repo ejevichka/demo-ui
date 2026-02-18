@@ -3,6 +3,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
+import { analytics } from '@/lib/analytics';
 import { ChatMessage } from '@/components/ai/ChatMessage';
 import {
   sendChatMessageMock,
@@ -50,7 +51,12 @@ type ThemeChatState = {
   inputValue: string;
 };
 
-export function AISearchBar() {
+interface AISearchBarProps {
+  showOnboardingTooltips?: boolean;
+  onOnboardingComplete?: () => void;
+}
+
+export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComplete }: AISearchBarProps) {
   const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
   const [stage, setStage] = useState<ChatStage>('inputBar');
@@ -60,6 +66,7 @@ export function AISearchBar() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [tooltipsVisible, setTooltipsVisible] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -134,6 +141,13 @@ export function AISearchBar() {
   const isExpanded = stage === 'expanded';
   const suggestedQuestions = suggestedQuestionsByTheme[themeName] || suggestedQuestionsByTheme.brownmarket;
 
+  // Dispatch openAIChat event when chat becomes expanded (for onboarding)
+  useEffect(() => {
+    if (isExpanded) {
+      window.dispatchEvent(new CustomEvent('openAIChat'));
+    }
+  }, [isExpanded]);
+
   // Store pending question and newChat flag from openAIChat event
   // Using ref instead of state to avoid re-render when clearing, which would cancel the timer
   const pendingActionRef = useRef<{
@@ -164,12 +178,15 @@ export function AISearchBar() {
         setStage('expanded');
         setInputValue(question);
       } else {
-        setStage('inputBar');
+        // Only open to inputBar if not already expanded (avoid resetting own state from self-dispatched event)
+        if (stage !== 'expanded') {
+          setStage('inputBar');
+        }
       }
     };
     window.addEventListener('openAIChat', handleOpenChat);
     return () => window.removeEventListener('openAIChat', handleOpenChat);
-  }, []);
+  }, [stage]);
 
   // Process pending action - this effect has themeName as dependency so it runs with correct theme
   useEffect(() => {
@@ -255,6 +272,11 @@ export function AISearchBar() {
     if (isInputBar) {
       setStage('expanded');
     }
+    // Hide onboarding tooltips on first interaction
+    if (tooltipsVisible && showOnboardingTooltips) {
+      setTooltipsVisible(false);
+      onOnboardingComplete?.();
+    }
   };
 
   const handleCollapse = () => {
@@ -281,6 +303,9 @@ export function AISearchBar() {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+
+    // Track chat message
+    analytics.trackChatMessage(themeName, text.trim());
 
     const assistantMessage = createAssistantMessage('', true);
     setMessages((prev) => [...prev, assistantMessage]);
@@ -616,6 +641,7 @@ export function AISearchBar() {
               {/* Input */}
               <input
                 ref={inputBarRef}
+                data-onboarding="ai-input"
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -813,18 +839,52 @@ export function AISearchBar() {
                     </AnimatePresence>
                   </div>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleCollapse}
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                  style={{
-                    backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                    color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </motion.button>
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleCollapse}
+                    data-onboarding="ai-close"
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                      color: isDark ? '#FFFFFF' : 'var(--neutral-600)',
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
+
+                  {/* Onboarding tooltip for close button */}
+                  <AnimatePresence>
+                    {showOnboardingTooltips && tooltipsVisible && (
+                      <motion.div
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        transition={{ delay: 0.3, duration: 0.3 }}
+                        className="absolute right-full top-1/2 -translate-y-1/2 mr-3 whitespace-nowrap"
+                      >
+                        <div
+                          className="px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg"
+                          style={{ backgroundColor: '#C4A862', color: '#FFFFFF' }}
+                        >
+                          Click here to hide AI Mode
+                        </div>
+                        {/* Arrow */}
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -right-2"
+                          style={{
+                            width: 0,
+                            height: 0,
+                            borderTop: '8px solid transparent',
+                            borderBottom: '8px solid transparent',
+                            borderLeft: '8px solid #C4A862',
+                          }}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Content area */}
@@ -991,19 +1051,53 @@ export function AISearchBar() {
                   </div>
 
                   {/* Auto-expanding textarea */}
-                  <div
-                    className="flex-1 flex items-end gap-2 px-4 py-2.5 rounded-xl"
-                    style={{
-                      backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
-                      border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
-                    }}
-                  >
-                    <textarea
-                      ref={textareaRef}
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Ask anything..."
+                  <div className="flex-1 relative">
+                    {/* Onboarding tooltip for input */}
+                    <AnimatePresence>
+                      {showOnboardingTooltips && tooltipsVisible && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ delay: 1.0, duration: 0.3 }}
+                          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3"
+                        >
+                          <div
+                            className="px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg whitespace-nowrap"
+                            style={{ backgroundColor: '#C4A862', color: '#FFFFFF' }}
+                          >
+                            You can ask any question about this brand
+                          </div>
+                          {/* Arrow */}
+                          <div
+                            className="absolute top-full left-1/2 -translate-x-1/2"
+                            style={{
+                              width: 0,
+                              height: 0,
+                              borderLeft: '8px solid transparent',
+                              borderRight: '8px solid transparent',
+                              borderTop: '8px solid #C4A862',
+                            }}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div
+                      className="flex items-end gap-2 px-4 py-2.5 rounded-xl"
+                      style={{
+                        backgroundColor: isDark ? 'var(--neutral-700)' : 'var(--neutral-100)',
+                        border: `1px solid ${isDark ? 'var(--neutral-600)' : 'var(--primary)'}`,
+                      }}
+                    >
+                      <textarea
+                        ref={textareaRef}
+                        data-onboarding="ai-input"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={handleInputFocus}
+                        placeholder="Ask anything..."
                       rows={1}
                       className="flex-1 bg-transparent border-none outline-none text-[14px] resize-none leading-[1.5]"
                       style={{
@@ -1012,6 +1106,7 @@ export function AISearchBar() {
                       }}
                       disabled={isLoading || isRecording}
                     />
+                    </div>
                   </div>
 
                   {/* Animated Mic/Send button */}
@@ -1065,6 +1160,7 @@ export function AISearchBar() {
                     >
                       <textarea
                         ref={inputRef}
+                        data-onboarding="ai-input"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
