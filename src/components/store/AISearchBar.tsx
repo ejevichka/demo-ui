@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Sparkles, Radio, History, Trash2 } from 'lucide-react';
+import { Plus, Mic, X, ArrowUp, CornerDownRight, HelpCircle, Send, ArrowRight, Radio, History, Trash2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { suggestedQuestionsByTheme } from '@/lib/themes';
 import { analytics } from '@/lib/analytics';
@@ -534,13 +534,10 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
             ? `0 32px 64px rgba(0, 0, 0, 0.25), 0 0 80px rgba(${primaryGlow}, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)`
             : isInputBar
             ? `0 16px 48px rgba(0, 0, 0, 0.2), 0 0 40px rgba(${primaryGlow}, 0.15)`
-            : `0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0px rgba(${primaryGlow}, 0)`,
+            : 'none',
         }}
-        whileHover={isCollapsed ? {
-          scale: 1.1,
-          boxShadow: `0 12px 40px rgba(0, 0, 0, 0.25), 0 0 30px rgba(${primaryGlow}, 0.4)`,
-        } : undefined}
-        whileTap={isCollapsed ? { scale: 0.95 } : undefined}
+        whileHover={undefined}
+        whileTap={undefined}
         transition={{
           layout: isExpanded ? SPRING_MORPH : SPRING_SLIDE,
           boxShadow: {
@@ -603,12 +600,7 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
                 color: 'var(--primary-foreground)',
               }}
             >
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-6 h-6" />
-              </motion.div>
+              <img src="/logo.svg" alt="AI" className="w-7 h-7" />
             </motion.div>
           )}
 
@@ -632,10 +624,10 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
             >
               {/* AI Icon */}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                style={{ backgroundColor: 'var(--primary)' }}
               >
-                <Sparkles className="w-4 h-4" />
+                <img src="/logo.svg" alt="AI" className="w-5 h-5" />
               </div>
 
               {/* Input */}
