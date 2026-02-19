@@ -8,7 +8,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 const ANCHORS = {
   aiButton: '[data-onboarding="ai-shopping"]',
   aiInput: '[data-onboarding="ai-input"]',
-  firstBuyButton: '[data-onboarding="first-buy-button"]',
+  productCard: '[data-onboarding="first-product-card"]',
   modalAIHeading: '[data-onboarding="modal-ai-heading"]',
   themeSwitcher: '[data-onboarding="theme-switcher"]',
 } as const;
@@ -61,7 +61,7 @@ export function OnboardingTour() {
   // Step 1 anchors (all shown together)
   const aiButtonRect = useAnchorRect(ANCHORS.aiButton, isStep1);
   const aiInputRect = useAnchorRect(ANCHORS.aiInput, isStep1);
-  const buyButtonRect = useAnchorRect(ANCHORS.firstBuyButton, isStep1);
+  const productCardRect = useAnchorRect(ANCHORS.productCard, isStep1);
 
   // Step 2 anchor
   const aiHeadingRect = useAnchorRect(ANCHORS.modalAIHeading, isStep2);
@@ -142,16 +142,16 @@ export function OnboardingTour() {
         />
       )}
 
-      {/* Step 1: First product Buy button tooltip */}
-      {isStep1 && buyButtonRect && !dismissedInStep1.has('product-card') && (
+      {/* Step 1: First product card tooltip */}
+      {isStep1 && productCardRect && !dismissedInStep1.has('product-card') && (
         <Tooltip
           key="step1-product"
           text="Click to expand product page"
           position="top"
           delay={300}
           style={{
-            top: buyButtonRect.top - 60,
-            left: buyButtonRect.left + buyButtonRect.width / 2,
+            top: productCardRect.top - 16,
+            left: productCardRect.left + productCardRect.width / 2,
           }}
         />
       )}
