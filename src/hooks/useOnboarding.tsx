@@ -36,15 +36,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [step]);
 
-  // Step 1 -> Complete: AI chat opened (user clicked AI button or input)
-  useEffect(() => {
-    const handler = () => {
-      setStep(prev => prev === 'step1_product_card' ? 'complete' : prev);
-    };
-    window.addEventListener('openAIChat', handler);
-    return () => window.removeEventListener('openAIChat', handler);
-  }, []);
-
   // Step 1 -> Step 2: ProductBuyModal opened
   useEffect(() => {
     const handler = () => {
