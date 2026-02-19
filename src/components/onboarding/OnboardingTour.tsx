@@ -6,6 +6,8 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 
 // Data-onboarding selectors for DOM targeting
 const ANCHORS = {
+  aiButton: '[data-onboarding="ai-shopping"]',
+  aiInput: '[data-onboarding="ai-input"]',
   productCard: '[data-onboarding="first-product-card"]',
   modalSuggestions: '[data-onboarding="modal-suggestions"]',
   themeSwitcher: '[data-onboarding="theme-switcher"]',
@@ -57,7 +59,12 @@ export function OnboardingTour() {
   const isStep2 = step === 'step2_modal_suggestions';
   const isStep3 = step === 'step3_theme_switcher';
 
+  // Step 1 anchors (all shown together)
+  const aiButtonRect = useAnchorRect(ANCHORS.aiButton, isStep1);
+  const aiInputRect = useAnchorRect(ANCHORS.aiInput, isStep1);
   const productCardRect = useAnchorRect(ANCHORS.productCard, isStep1);
+
+  // Step 2 & 3 anchors
   const suggestionsRect = useAnchorRect(ANCHORS.modalSuggestions, isStep2);
   const themeSwitcherRect = useAnchorRect(ANCHORS.themeSwitcher, isStep3);
 
@@ -85,10 +92,38 @@ export function OnboardingTour() {
 
   const content = (
     <AnimatePresence>
+      {/* Step 1: AI Shopping button tooltip */}
+      {isStep1 && aiButtonRect && (
+        <Tooltip
+          key="step1-ai-button"
+          text="Click to start AI Shopping Mode"
+          position="bottom"
+          delay={200}
+          style={{
+            top: aiButtonRect.bottom + 16,
+            left: aiButtonRect.left + aiButtonRect.width / 2,
+          }}
+        />
+      )}
+
+      {/* Step 1: AI Input tooltip */}
+      {isStep1 && aiInputRect && (
+        <Tooltip
+          key="step1-ai-input"
+          text="Click to start AI Shopping Mode"
+          position="top"
+          delay={1200}
+          style={{
+            top: aiInputRect.top - 60,
+            left: aiInputRect.left + aiInputRect.width / 2,
+          }}
+        />
+      )}
+
       {/* Step 1: First product card tooltip */}
       {isStep1 && productCardRect && (
         <Tooltip
-          key="step1"
+          key="step1-product"
           text="Click to expand product page"
           position="bottom"
           delay={300}
