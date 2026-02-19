@@ -16,7 +16,7 @@ export function ProductGrid() {
             className="w-[calc(50%-12px)] md:w-[280px]"
             data-onboarding={index === 0 ? 'first-product-card' : undefined}
           >
-            <ProductCard product={product} isFirstCard={index === 0} />
+            <ProductCard product={product} />
           </div>
         ))}
       </div>
