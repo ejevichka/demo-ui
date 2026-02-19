@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import type { ThemeName } from '@/types';
@@ -14,12 +14,27 @@ const industries: { id: ThemeName; name: string }[] = [
 export function ThemeSwitcher() {
   const { themeName, setTheme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isExpanded]);
 
   return (
     <motion.div
+      ref={containerRef}
       className="fixed top-1/2 -translate-y-1/2 right-4 z-30"
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      data-onboarding="theme-switcher"
       initial={false}
     >
       <motion.div
@@ -45,11 +60,12 @@ export function ThemeSwitcher() {
             // Collapsed: show hamburger icon
             <motion.div
               key="collapsed"
-              className="flex items-center justify-center p-3"
+              className="flex items-center justify-center p-3 cursor-pointer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
+              onClick={() => setIsExpanded(true)}
             >
               <Menu className="w-5 h-5 text-white" />
             </motion.div>

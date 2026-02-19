@@ -10,9 +10,13 @@ export function ProductGrid() {
     <section className="container mx-auto px-4 py-8">
       {/* Centered flex layout for products */}
       <div className="flex flex-wrap justify-center gap-6">
-        {products.map((product) => (
-          <div key={product.id} className="w-[calc(50%-12px)] md:w-[280px]">
-            <ProductCard product={product} />
+        {products.map((product, index) => (
+          <div
+            key={product.id}
+            className="w-[calc(50%-12px)] md:w-[280px]"
+            data-onboarding={index === 0 ? 'first-product-card' : undefined}
+          >
+            <ProductCard product={product} isFirstCard={index === 0} />
           </div>
         ))}
       </div>

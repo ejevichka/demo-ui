@@ -9,9 +9,10 @@ import { ProductBuyModal } from './ProductBuyModal';
 
 interface ProductCardProps {
   product: Product;
+  isFirstCard?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, isFirstCard }: ProductCardProps) {
   const { theme, themeName } = useTheme();
   const isDark = theme.isDark;
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -109,6 +110,7 @@ export function ProductCard({ product }: ProductCardProps) {
               backgroundColor: 'var(--primary)',
               color: '#FFFFFF',
             }}
+            data-onboarding={isFirstCard ? 'first-buy-button' : undefined}
           >
             Buy
           </button>

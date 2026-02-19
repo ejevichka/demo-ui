@@ -1,135 +1,191 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Tooltip } from './Tooltip';
-import { markOnboardingComplete } from '@/lib/onboarding';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
-interface OnboardingTourProps {
-  onComplete: () => void;
-}
-
-type Step = 'waiting' | 'step1' | 'complete';
-
-// Staggered delays for tooltip appearance (in ms)
-const TOP_TOOLTIP_DELAY = 200;
-const BOTTOM_TOOLTIP_DELAY = 1200;
+// Data-onboarding selectors for DOM targeting
+const ANCHORS = {
+  aiButton: '[data-onboarding="ai-shopping"]',
+  aiInput: '[data-onboarding="ai-input"]',
+  firstBuyButton: '[data-onboarding="first-buy-button"]',
+  modalAIHeading: '[data-onboarding="modal-ai-heading"]',
+  themeSwitcher: '[data-onboarding="theme-switcher"]',
+} as const;
 
 /**
- * Onboarding tour component that shows tooltips pointing to key UI elements
- * Step 1: Shows tooltips on AI Shopping button and AI input
- * Step 2: Shows tooltip on input when chat is expanded
+ * Hook to track DOM element position with polling
  */
-export function OnboardingTour({ onComplete }: OnboardingTourProps) {
-  const [step, setStep] = useState<Step>('waiting');
-  const [positions, setPositions] = useState<{
-    aiButton: DOMRect | null;
-    aiInput: DOMRect | null;
-  }>({ aiButton: null, aiInput: null });
+function useAnchorRect(selector: string, active: boolean): DOMRect | null {
+  const [rect, setRect] = useState<DOMRect | null>(null);
 
-  // Calculate positions of target elements
-  const updatePositions = useCallback(() => {
-    const aiButton = document.querySelector('[data-onboarding="ai-shopping"]');
-    const aiInput = document.querySelector('[data-onboarding="ai-input"]');
+  const measure = useCallback(() => {
+    const el = document.querySelector(selector);
+    setRect(el ? el.getBoundingClientRect() : null);
+  }, [selector]);
 
-    setPositions({
-      aiButton: aiButton?.getBoundingClientRect() || null,
-      aiInput: aiInput?.getBoundingClientRect() || null,
-    });
-  }, []);
-
-  // Start onboarding immediately (tooltips have their own staggered delays)
   useEffect(() => {
-    setStep('step1');
-    updatePositions();
-  }, [updatePositions]);
+    if (!active) {
+      setRect(null);
+      return;
+    }
 
-  // Update positions on mount and resize
-  useEffect(() => {
-    if (step === 'waiting') return;
-
-    updatePositions();
-
-    const handleResize = () => updatePositions();
-    const handleScroll = () => updatePositions();
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll, true);
-
-    // Poll for position changes (in case elements animate)
-    const interval = setInterval(updatePositions, 300);
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    // Poll for position changes (handles animations, lazy loading)
+    const interval = setInterval(measure, 300);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
       clearInterval(interval);
     };
-  }, [step, updatePositions]);
+  }, [active, measure]);
 
-  const completeTour = useCallback(() => {
-    setStep('complete');
-    markOnboardingComplete();
-    onComplete();
-  }, [onComplete]);
+  return rect;
+}
 
-  // Listen for AI chat opening - complete tour when chat opens
+/**
+ * Onboarding tour that shows sequential tooltips:
+ * Step 1: "Click to expand product page" on first product card
+ * Step 2: "Click to get answers for most relevant questions" on modal suggestions
+ * Step 3: "Switch between industries" on ThemeSwitcher
+ */
+export function OnboardingTour() {
+  const { step, advance } = useOnboarding();
+
+  const isStep1 = step === 'step1_product_card';
+  const isStep2 = step === 'step2_modal_suggestions';
+
+  // Step 1 anchors (all shown together)
+  const aiButtonRect = useAnchorRect(ANCHORS.aiButton, isStep1);
+  const aiInputRect = useAnchorRect(ANCHORS.aiInput, isStep1);
+  const buyButtonRect = useAnchorRect(ANCHORS.firstBuyButton, isStep1);
+
+  // Step 2 anchor
+  const aiHeadingRect = useAnchorRect(ANCHORS.modalAIHeading, isStep2);
+
+  // ThemeSwitcher shown in step1 together with other tooltips
+  const themeSwitcherRect = useAnchorRect(ANCHORS.themeSwitcher, isStep1);
+
+  // Track individually dismissed tooltips in step1
+  const [dismissedInStep1, setDismissedInStep1] = useState<Set<string>>(new Set());
+
+  // Dismiss all step1 tooltips on any click
   useEffect(() => {
-    const handleAIChatOpen = () => {
-      if (step === 'step1') {
-        completeTour();
-      }
+    if (!isStep1) return;
+
+    const handleAnyClick = () => {
+      setDismissedInStep1(new Set(['ai-button', 'ai-input', 'product-card', 'theme-switcher']));
     };
 
-    window.addEventListener('openAIChat', handleAIChatOpen);
-    return () => window.removeEventListener('openAIChat', handleAIChatOpen);
-  }, [step, completeTour]);
+    // Delay to avoid catching initial page load clicks
+    const timeout = setTimeout(() => {
+      window.addEventListener('click', handleAnyClick, { once: true });
+    }, 500);
 
-  if (step === 'complete' || step === 'waiting') return null;
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('click', handleAnyClick);
+    };
+  }, [isStep1]);
+
+  // Step 2: dismiss on any click (advances to step 3)
+  useEffect(() => {
+    if (!isStep2) return;
+
+    const handleAnyClick = () => {
+      advance();
+    };
+
+    // Delay to avoid catching the modal open click
+    const timeout = setTimeout(() => {
+      window.addEventListener('click', handleAnyClick, { once: true });
+    }, 200);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('click', handleAnyClick);
+    };
+  }, [isStep2, advance]);
+
+  if (!isStep1 && !isStep2) return null;
 
   const content = (
     <AnimatePresence>
-      {/* Semi-transparent backdrop for step 1 - pointer-events-none to allow clicks through */}
-      {step === 'step1' && (
-        <div
-          className="fixed inset-0 z-[99] pointer-events-none"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+      {/* Step 1: AI Shopping button tooltip */}
+      {isStep1 && aiButtonRect && !dismissedInStep1.has('ai-button') && (
+        <Tooltip
+          key="step1-ai-button"
+          text="Click to start AI Shopping Mode"
+          position="bottom"
+          delay={200}
+          style={{
+            top: aiButtonRect.bottom + 16,
+            left: aiButtonRect.left + aiButtonRect.width / 2,
+          }}
         />
       )}
 
-      {/* Step 1: Tooltips on AI Shopping button and AI input */}
-      {step === 'step1' && (
-        <>
-          {/* Tooltip for AI Shopping button in header (centered) */}
-          {positions.aiButton && (
-            <Tooltip
-              text="Click to start AI Shopping Mode"
-              position="bottom"
-              delay={TOP_TOOLTIP_DELAY}
-              style={{
-                top: positions.aiButton.bottom + 16,
-                left: positions.aiButton.left + positions.aiButton.width / 2,
-              }}
-            />
-          )}
-
-          {/* Tooltip for AI input at bottom */}
-          {positions.aiInput && (
-            <Tooltip
-              text="Click to start AI Shopping Mode"
-              position="top"
-              delay={BOTTOM_TOOLTIP_DELAY}
-              style={{
-                top: positions.aiInput.top - 60,
-                left: positions.aiInput.left + positions.aiInput.width / 2,
-              }}
-            />
-          )}
-        </>
+      {/* Step 1: AI Input tooltip */}
+      {isStep1 && aiInputRect && !dismissedInStep1.has('ai-input') && (
+        <Tooltip
+          key="step1-ai-input"
+          text="Click to start AI Shopping Mode"
+          position="top"
+          delay={1200}
+          style={{
+            top: aiInputRect.top - 60,
+            left: aiInputRect.left + aiInputRect.width / 2,
+          }}
+        />
       )}
 
+      {/* Step 1: First product Buy button tooltip */}
+      {isStep1 && buyButtonRect && !dismissedInStep1.has('product-card') && (
+        <Tooltip
+          key="step1-product"
+          text="Click to expand product page"
+          position="top"
+          delay={300}
+          style={{
+            top: buyButtonRect.top - 60,
+            left: buyButtonRect.left + buyButtonRect.width / 2,
+          }}
+        />
+      )}
+
+      {/* Step 2: Modal AI heading tooltip */}
+      {isStep2 && aiHeadingRect && (
+        <Tooltip
+          key="step2"
+          text="Click to get answers for most relevant questions"
+          position="top"
+          delay={400}
+          style={{
+            top: aiHeadingRect.top - 16,
+            left: aiHeadingRect.left + aiHeadingRect.width / 2,
+          }}
+        />
+      )}
+
+      {/* Step 1: ThemeSwitcher tooltip (shown with other step1 tooltips) */}
+      {isStep1 && themeSwitcherRect && !dismissedInStep1.has('theme-switcher') && (
+        <Tooltip
+          key="step1-theme-switcher"
+          text="Switch between industries"
+          position="left"
+          delay={200}
+          style={{
+            top: themeSwitcherRect.top + themeSwitcherRect.height / 2,
+            left: themeSwitcherRect.left - 200,
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 
-  // Render via portal to ensure proper z-index
   if (typeof document !== 'undefined') {
     return createPortal(content, document.body);
   }
