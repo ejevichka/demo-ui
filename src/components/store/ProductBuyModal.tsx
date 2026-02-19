@@ -280,6 +280,7 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
                     <h3
                       className="text-lg font-semibold mb-3"
                       style={{ color: 'var(--primary)' }}
+                      data-onboarding="modal-ai-heading"
                     >
                       Ask AI Shopping Assistant
                     </h3>
