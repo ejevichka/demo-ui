@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowDownRight } from 'lucide-react';
@@ -27,6 +27,18 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
   const isDark = theme.isDark;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
+  const wasOpenRef = useRef(false);
+
+  // Dispatch onboarding events on modal open/close
+  useEffect(() => {
+    if (isOpen && !wasOpenRef.current) {
+      window.dispatchEvent(new CustomEvent('onboarding:product-modal-opened'));
+    }
+    if (!isOpen && wasOpenRef.current) {
+      window.dispatchEvent(new CustomEvent('onboarding:product-modal-closed'));
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // Get reviews and summary for this product
   const reviews: Review[] = reviewDataByTheme[themeName]?.[product.id] || [];
@@ -280,7 +292,10 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
                     </p>
 
                     {/* Suggestion chips */}
-                    <div className="flex flex-col gap-2 mb-4">
+                    <div
+                      className="flex flex-col gap-2 mb-4"
+                      data-onboarding="modal-suggestions"
+                    >
                       {suggestionTemplates.map((item, index) => (
                         <motion.button
                           key={index}

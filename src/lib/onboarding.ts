@@ -2,6 +2,13 @@
  * Onboarding utilities for managing "shown once" flag
  */
 
+export type OnboardingStep =
+  | 'idle'
+  | 'step1_product_card'
+  | 'step2_modal_suggestions'
+  | 'step3_theme_switcher'
+  | 'complete';
+
 const ONBOARDING_KEY = 'brainform_onboarding_shown';
 
 /**

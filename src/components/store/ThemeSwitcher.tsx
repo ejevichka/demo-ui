@@ -18,6 +18,7 @@ export function ThemeSwitcher() {
   return (
     <motion.div
       className="fixed top-1/2 -translate-y-1/2 right-4 z-30"
+      data-onboarding="theme-switcher"
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
       initial={false}
