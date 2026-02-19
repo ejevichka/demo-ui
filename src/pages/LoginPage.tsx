@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
 import { resetOnboarding } from '@/lib/onboarding';
 
-const VALID_PASSWORD = 'brainform';
+const VALID_PASSWORDS = ['brainform', '$$$$$$brainform$$$$$$'];
 
 interface UserFormData {
   email: string;
@@ -44,7 +44,7 @@ export function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (password === VALID_PASSWORD) {
+    if (VALID_PASSWORDS.includes(password)) {
       setStep(2);
     } else {
       setError('Invalid password');
