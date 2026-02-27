@@ -24,13 +24,6 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsReviewModalOpen(true);
   };
 
-  const handleBuyClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Track product view
-    analytics.trackProductView(themeName, product.id, product.title);
-    setIsBuyModalOpen(true);
-  };
-
   const handleCardClick = () => {
     // Track product view
     analytics.trackProductView(themeName, product.id, product.title);
