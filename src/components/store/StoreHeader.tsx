@@ -119,12 +119,25 @@ export function StoreHeader() {
                 style={{ color: theme.isDark ? '#FFFFFF' : 'var(--neutral-700)' }}
               />
             </button>
-            <button className="p-2 rounded-lg transition-colors hover:bg-black/5">
-              <ShoppingCart
-                className="w-5 h-5"
-                style={{ color: theme.isDark ? '#FFFFFF' : 'var(--neutral-700)' }}
-              />
-            </button>
+            <div className="relative group">
+              <button className="p-2 rounded-lg transition-colors hover:bg-black/5">
+                <ShoppingCart
+                  className="w-5 h-5"
+                  style={{ color: theme.isDark ? '#FFFFFF' : 'var(--neutral-700)' }}
+                />
+              </button>
+              <div
+                className="absolute right-0 top-full mt-2 px-3 py-2 rounded-lg text-xs leading-snug opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap"
+                style={{
+                  backgroundColor: theme.isDark ? 'var(--neutral-700)' : 'rgba(23, 20, 33, 0.85)',
+                  color: '#FFFFFF',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+              >
+                Cart disabled in demo mode
+              </div>
+            </div>
           </div>
         </div>
       </div>

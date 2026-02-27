@@ -10,13 +10,17 @@ import {
 } from '@/components/store';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { OnboardingProvider } from '@/hooks/useOnboarding';
+import { DemoBanner, DemoWelcomeModal } from '@/components/demo';
+import { useTheme } from '@/hooks/useTheme';
 
 export function StorePage() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   return (
     <OnboardingProvider>
       <div className="min-h-screen">
+        <DemoBanner isDark={theme.isDark} />
         <StoreHeader />
         <NavigationBar />
         <HeroBanner />
@@ -47,6 +51,7 @@ export function StorePage() {
 
         {/* Onboarding tour for new users */}
         <OnboardingTour />
+        <DemoWelcomeModal />
       </div>
     </OnboardingProvider>
   );

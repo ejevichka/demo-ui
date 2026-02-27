@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { analytics } from '@/lib/analytics';
 import { ReviewSummaryModal } from './ReviewSummaryModal';
 import { ProductBuyModal } from './ProductBuyModal';
+import { DemoBadge } from '@/components/demo';
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const isDark = theme.isDark;
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [showBuyTooltip, setShowBuyTooltip] = useState(false);
 
   const handleAISummaryClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,7 +65,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Content */}
         <div className="flex flex-col flex-1 gap-4">
           {/* Price row */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className="text-[14px] font-bold"
               style={{ color: isDark ? '#FFFFFF' : 'var(--neutral-900)' }}
@@ -78,6 +80,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 {formatPrice(product.oldPrice, product.currency)}
               </span>
             )}
+            <DemoBadge />
           </div>
 
           {/* Product title */}
@@ -102,16 +105,47 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex-1" />
 
           {/* Buy button */}
-          <button
-            onClick={handleBuyClick}
-            className="w-full h-9 rounded text-[14px] font-medium transition-opacity hover:opacity-90"
-            style={{
-              backgroundColor: 'var(--primary)',
-              color: '#FFFFFF',
-            }}
-          >
-            Buy
-          </button>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowBuyTooltip(true);
+                setTimeout(() => setShowBuyTooltip(false), 2000);
+              }}
+              className="w-full h-9 rounded text-[14px] font-medium transition-opacity hover:opacity-90"
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+              }}
+            >
+              Buy
+            </button>
+            {showBuyTooltip && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap z-10 animate-in"
+                style={{
+                  backgroundColor: isDark ? 'var(--neutral-700)' : 'rgba(23, 20, 33, 0.85)',
+                  color: '#FFFFFF',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+              >
+                Demo only — no real purchase will be made
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 top-full"
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft: '5px solid transparent',
+                    borderRight: '5px solid transparent',
+                    borderTop: isDark
+                      ? '5px solid var(--neutral-700)'
+                      : '5px solid rgba(23, 20, 33, 0.85)',
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </article>
 
