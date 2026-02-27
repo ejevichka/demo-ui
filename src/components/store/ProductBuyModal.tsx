@@ -265,15 +265,7 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
                   </div>
 
                   {/* Buy button */}
-                  <button
-                    className="w-full h-12 rounded-lg text-[16px] font-medium transition-opacity hover:opacity-90 mb-6"
-                    style={{
-                      backgroundColor: 'var(--primary)',
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    Buy
-                  </button>
+                  <BuyButtonWithTooltip isDark={isDark} />
 
                   {/* AI Shopping Assistant Section */}
                   <div className="mt-auto">
@@ -375,4 +367,51 @@ export function ProductBuyModal({ isOpen, onClose, onOpenAI, product }: ProductB
   }
 
   return null;
+}
+
+function BuyButtonWithTooltip({ isDark }: { isDark: boolean }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="relative mb-6">
+      <button
+        onClick={() => {
+          setShowTooltip(true);
+          setTimeout(() => setShowTooltip(false), 2000);
+        }}
+        className="w-full h-12 rounded-lg text-[16px] font-medium transition-opacity hover:opacity-90"
+        style={{
+          backgroundColor: 'var(--primary)',
+          color: '#FFFFFF',
+        }}
+      >
+        Buy
+      </button>
+      {showTooltip && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap z-10 animate-in"
+          style={{
+            backgroundColor: isDark ? 'var(--neutral-700)' : 'rgba(23, 20, 33, 0.85)',
+            color: '#FFFFFF',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        >
+          Demo only — no real purchase will be made
+          <div
+            className="absolute left-1/2 -translate-x-1/2 top-full"
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: isDark
+                ? '5px solid var(--neutral-700)'
+                : '5px solid rgba(23, 20, 33, 0.85)',
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
 }

@@ -255,8 +255,15 @@ export function AISearchBar({ showOnboardingTooltips = false, onOnboardingComple
       if (target.closest('[data-product-modal="true"]')) {
         return;
       }
+      // Ignore clicks inside portal-rendered overlays (demo welcome modal, etc.)
+      if (target.closest('[role="dialog"]') || target.closest('.liquid-overlay')) {
+        return;
+      }
       if (containerRef.current && !containerRef.current.contains(target)) {
-        setStage(stage === 'expanded' ? 'inputBar' : 'collapsed');
+        if (stage === 'expanded') {
+          setStage('inputBar');
+        }
+        // inputBar no longer collapses on outside click — only via close button
       }
     };
 

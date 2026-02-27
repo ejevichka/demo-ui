@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
+import { DemoBanner } from '@/components/demo';
 import type { ThemeName } from '@/types';
 
 interface Industry {
@@ -43,13 +44,14 @@ export function IndustrySelectPage() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: '#FAFAFF' }}
     >
+      <DemoBanner />
       {/* Main content */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:px-[80px] md:py-[40px]">
         <div className="w-full max-w-[1440px] mx-auto flex flex-col items-center">
           {/* Header */}
           <div className="text-center mb-8 md:mb-[48px]">
             <span
-              className="text-[11px] sm:text-[12px] uppercase tracking-[0.1em]"
+              className="text-[11px] sm:text-[12px] font-bold uppercase tracking-[0.1em]"
               style={{ color: '#AAA6B3' }}
             >
               Product Demo
