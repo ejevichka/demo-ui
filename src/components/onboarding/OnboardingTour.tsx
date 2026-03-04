@@ -100,13 +100,14 @@ export function OnboardingTour() {
     };
 
     // Delay to avoid catching the modal open click
+    // Use capture phase so stopPropagation() inside modals doesn't block this
     const timeout = setTimeout(() => {
-      window.addEventListener('click', handleAnyClick, { once: true });
+      window.addEventListener('click', handleAnyClick, { once: true, capture: true });
     }, 200);
 
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('click', handleAnyClick);
+      window.removeEventListener('click', handleAnyClick, { capture: true });
     };
   }, [isStep2, advance]);
 

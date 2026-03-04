@@ -96,16 +96,13 @@ export function LoginPage() {
         </label>
         <div
           className={cn(
-            'flex items-center gap-2 px-4 py-3.5 rounded-xl transition-all duration-200',
+            'flex items-center gap-2 px-4 py-3.5 rounded-xl transition-all duration-200 overflow-hidden border-2',
             passwordFocused
-              ? 'ring-2 bg-white'
+              ? 'bg-white'
               : 'bg-transparent'
           )}
           style={{
-            borderWidth: '1px',
-            borderStyle: 'solid',
             borderColor: passwordFocused ? 'var(--primary)' : 'var(--neutral-200)',
-            boxShadow: passwordFocused ? '0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent)' : 'none',
           }}
         >
           <input
@@ -184,16 +181,13 @@ export function LoginPage() {
         </label>
         <div
           className={cn(
-            'flex items-center gap-2 px-4 py-3.5 rounded-xl transition-all duration-200',
+            'flex items-center gap-2 px-4 py-3.5 rounded-xl transition-all duration-200 overflow-hidden border-2',
             isFocused
-              ? 'ring-2 bg-white'
+              ? 'bg-white'
               : 'bg-transparent'
           )}
           style={{
-            borderWidth: '1px',
-            borderStyle: 'solid',
             borderColor: isFocused ? 'var(--primary)' : 'var(--neutral-200)',
-            boxShadow: isFocused ? '0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent)' : 'none',
           }}
         >
           <input
@@ -203,14 +197,14 @@ export function LoginPage() {
             onFocus={() => setFocusedField(field)}
             onBlur={() => setFocusedField(null)}
             placeholder={placeholder}
-            className="flex-1 bg-transparent outline-none text-base"
+            className="flex-1 min-w-0 bg-transparent outline-none text-base"
             style={{ color: 'var(--neutral-900)' }}
           />
           {value && (
             <button
               type="button"
               onClick={() => setUserInfo({ ...userInfo, [field]: '' })}
-              className="p-1 rounded-full hover:bg-black/5 transition-colors"
+              className="flex-shrink-0 p-1 rounded-full hover:bg-black/5 transition-colors"
             >
               <X
                 className="w-4 h-4"
@@ -261,13 +255,24 @@ export function LoginPage() {
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Logo - absolute positioned */}
-        <div className="absolute top-10 left-20 flex items-center gap-3 z-10">
-          <BrainformLogo />
+        <div className="absolute top-10 left-20 z-10">
+          <div className="flex items-center gap-3">
+            <BrainformLogo />
+            <span
+              className="text-xl font-semibold"
+              style={{ color: 'var(--primary)' }}
+            >
+              brainform.ai
+            </span>
+          </div>
           <span
-            className="text-xl font-semibold"
-            style={{ color: 'var(--primary)' }}
+            className="inline-block px-5 py-2.5 rounded-full text-sm font-medium mt-4"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--primary) 7%, transparent)',
+              color: 'var(--primary)'
+            }}
           >
-            brainform.ai
+            Demo access
           </span>
         </div>
 
@@ -282,15 +287,6 @@ export function LoginPage() {
 
         {/* Bottom text - absolute positioned over image */}
         <div className="absolute bottom-10 left-20 z-10">
-          <span
-            className="inline-block px-5 py-2.5 rounded-full text-sm font-medium mb-5"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--primary) 7%, transparent)',
-              color: 'var(--primary)'
-            }}
-          >
-            Demo access
-          </span>
           <h1
             className="text-4xl font-bold leading-tight"
             style={{ color: 'var(--neutral-900)' }}
@@ -306,7 +302,7 @@ export function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-20 py-10 bg-white">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-10 lg:hidden">
+          <div className="flex items-center justify-center gap-3 mb-10 lg:hidden">
             <BrainformLogo />
             <span
               className="text-xl font-semibold"

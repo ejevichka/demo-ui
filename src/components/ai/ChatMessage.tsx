@@ -452,7 +452,7 @@ function ProductModal({ name, url: _url, price, oldPrice, imageUrl, isDark, desc
                 color: '#FFFFFF',
               }}
             >
-              {availability ? 'В наличии' : 'Нет в наличии'}
+              {availability ? 'In stock' : 'Out of stock'}
             </div>
           )}
         </div>
