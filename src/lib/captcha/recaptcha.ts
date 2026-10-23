@@ -1,5 +1,6 @@
 import { CaptchaError, type CaptchaAdapter } from './types';
-import { loadScriptOnce } from './loadScript';
+import { loadScriptOnce, evictScript } from './loadScript';
+import { withDeadline } from './deadline';
 
 export function recaptchaScriptUrl(siteKey: string): string {
   return `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
@@ -21,13 +22,13 @@ declare global {
 
 const RECAPTCHA_TIMEOUT = 30_000;
 
-function hideBadgeOnce(): void {
-  if (document.querySelector('style[data-recaptcha-badge]')) return;
-  const style = document.createElement('style');
-  style.setAttribute('data-recaptcha-badge', '');
-  style.textContent = '.grecaptcha-badge { visibility: hidden; }';
-  document.head.appendChild(style);
-}
+// The badge is deliberately NOT hidden. Google permits hiding it only when the
+// page carries the reCAPTCHA notice with links to the Privacy Policy and Terms
+// of Service (https://developers.google.com/recaptcha/docs/faq), and this app
+// shows no such notice. Hiding it here would put the demo out of compliance
+// with the terms of the key it runs on. If the notice is ever added to the
+// sign-in flow, hiding the badge becomes legitimate - and that is a UI change,
+// not a change to this adapter.
 
 function whenReady(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -41,39 +42,31 @@ function whenReady(): Promise<void> {
 
 export const recaptchaAdapter: CaptchaAdapter = {
   async getToken(siteKey: string): Promise<string> {
-    hideBadgeOnce();
-    await loadScriptOnce(recaptchaScriptUrl(siteKey));
-    await whenReady();
+    const url = recaptchaScriptUrl(siteKey);
 
-    try {
-      const token = await new Promise<string>((resolve, reject) => {
-        const timerId = setTimeout(
-          () =>
-            reject(
-              new CaptchaError(
-                'reCAPTCHA timed out after 30 seconds'
-              )
-            ),
-          RECAPTCHA_TIMEOUT
-        );
-        window
-          .grecaptcha!.execute(siteKey, { action: 'create_user' })
-          .then((t) => {
-            clearTimeout(timerId);
-            resolve(t);
-          })
-          .catch((e) => {
-            clearTimeout(timerId);
-            reject(e);
+    return withDeadline(
+      RECAPTCHA_TIMEOUT,
+      'reCAPTCHA timed out after 30 seconds',
+      async () => {
+        await loadScriptOnce(url);
+        await whenReady();
+
+        try {
+          const token = await window.grecaptcha!.execute(siteKey, {
+            action: 'create_user',
           });
-      });
-      if (!token)
-        throw new CaptchaError('reCAPTCHA returned an empty token');
-      return token;
-    } catch (err) {
-      if (err instanceof CaptchaError) throw err;
-      const message = err instanceof Error ? err.message : String(err);
-      throw new CaptchaError(`reCAPTCHA verification failed: ${message}`);
-    }
+          if (!token)
+            throw new CaptchaError('reCAPTCHA returned an empty token');
+          return token;
+        } catch (err) {
+          if (err instanceof CaptchaError) throw err;
+          const message = err instanceof Error ? err.message : String(err);
+          throw new CaptchaError(
+            `reCAPTCHA verification failed: ${message}`
+          );
+        }
+      },
+      () => evictScript(url)
+    );
   },
 };
