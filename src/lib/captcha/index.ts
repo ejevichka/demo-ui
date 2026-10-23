@@ -1,16 +1,13 @@
 import { CaptchaError } from './types';
 import type { CaptchaAdapter, CaptchaProviderId, CaptchaConfig } from './types';
-import { yandexAdapter } from './yandex';
 import { recaptchaAdapter } from './recaptcha';
 
 export { CaptchaError } from './types';
 export type { CaptchaProviderId, CaptchaConfig, CaptchaAdapter } from './types';
 export { __markScriptLoaded, __resetScriptCacheForTests } from './loadScript';
-export { YANDEX_SCRIPT_URL } from './yandex';
 export { recaptchaScriptUrl } from './recaptcha';
 
 const adapters: Partial<Record<CaptchaProviderId, CaptchaAdapter>> = {
-  yandex: yandexAdapter,
   google: recaptchaAdapter,
 };
 
@@ -37,27 +34,26 @@ export async function getCaptchaToken(
 }
 
 const CONFIG_TIMEOUT_MS = 10_000;
-/** Successful answers expire so a provider switch is picked up without a reload. */
+/** Successful answers expire so a site-key rotation is picked up without a reload. */
 const CONFIG_TTL_MS = 5 * 60_000;
 const BACKOFF_MS = [300, 900];
 const LAST_GOOD_PREFIX = 'captcha:last-good:';
 
 interface CacheEntry {
   config: CaptchaConfig;
-  /** Infinity for the legacy answer, which cannot change without a deploy. */
   expiresAt: number;
 }
 
 // Keyed by API base rather than one shared slot: this app drives three brand
-// backends from a single bundle, and they can sit on different providers while
-// a migration is half-done. One slot would hand the second brand the provider
-// and site key of whichever brand the visitor happened to open first.
+// backends from a single bundle, and nothing says they must carry the same
+// reCAPTCHA key. One slot would hand the second brand whatever the first one
+// resolved.
 const cache = new Map<string, CacheEntry>();
 
 // A second map for calls already in the air. Without it two components asking
 // at once fire two probes, and the slower answer overwrites the faster one -
-// so a 503 arriving late could replace a good Google config for the rest of
-// the session.
+// so a 503 arriving late could replace a good config for the rest of the
+// session.
 const inFlight = new Map<string, Promise<CaptchaConfig>>();
 
 function isUsableKey(value: unknown): value is string {
@@ -69,12 +65,11 @@ function readLastGood(apiUrl: string): CaptchaConfig | null {
     const raw = localStorage.getItem(LAST_GOOD_PREFIX + apiUrl);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<CaptchaConfig>;
-    if (
-      parsed.provider === 'google' ||
-      parsed.provider === 'yandex' ||
-      parsed.provider === 'none'
-    ) {
-      return { provider: parsed.provider, siteKey: parsed.siteKey ?? '' };
+    if (parsed.provider === 'google' && isUsableKey(parsed.siteKey)) {
+      return { provider: 'google', siteKey: parsed.siteKey };
+    }
+    if (parsed.provider === 'none') {
+      return { provider: 'none', siteKey: '' };
     }
     return null;
   } catch {
@@ -93,31 +88,21 @@ function writeLastGood(apiUrl: string, config: CaptchaConfig): void {
 
 type Attempt =
   | { kind: 'ok'; config: CaptchaConfig }
-  | { kind: 'legacy' }
-  | { kind: 'retry'; reason: string };
+  | { kind: 'retry'; reason: string }
+  | { kind: 'fatal'; reason: string };
 
 /**
  * Validate one answer.
  *
- * The site key is provider-specific, which the first version missed: it applied
- * the build-time key to whatever the server named. That key is a Yandex client
- * key, so a Google answer that arrived without one got a Yandex key handed to
- * `grecaptcha.execute` - a guaranteed failure reported in Google's words rather
- * than ours. A Google key can only come from the server.
+ * There is no build-time key and no second provider to fall back to: the demo
+ * runs reCAPTCHA, and the site key only ever comes from the backend. Anything
+ * else the server might say - `yandex` left over from before the migration, a
+ * provider with no key - is a backend misconfiguration, and saying so is more
+ * useful than minting a token that will be refused somewhere else.
  */
-function validate(
-  data: Partial<CaptchaConfig>,
-  fallbackSiteKey: string
-): Attempt {
+function validate(data: Partial<CaptchaConfig>): Attempt {
   if (data.provider === 'none') {
     return { kind: 'ok', config: { provider: 'none', siteKey: '' } };
-  }
-
-  if (data.provider === 'yandex') {
-    const siteKey = isUsableKey(data.siteKey) ? data.siteKey : fallbackSiteKey;
-    return isUsableKey(siteKey)
-      ? { kind: 'ok', config: { provider: 'yandex', siteKey } }
-      : { kind: 'retry', reason: 'yandex config carries no usable site key' };
   }
 
   if (data.provider === 'google') {
@@ -130,13 +115,15 @@ function validate(
         };
   }
 
-  return { kind: 'retry', reason: `unknown provider: ${String(data.provider)}` };
+  return {
+    kind: 'retry',
+    reason: `backend reports provider "${String(
+      data.provider
+    )}", but this app only serves reCAPTCHA (set CAPTCHA_PROVIDER=google)`,
+  };
 }
 
-async function probe(
-  apiUrl: string,
-  fallbackSiteKey: string
-): Promise<Attempt> {
+async function probe(apiUrl: string): Promise<Attempt> {
   let res: Response;
   try {
     res = await fetch(`${apiUrl}/auth/captcha/config`, {
@@ -149,11 +136,15 @@ async function probe(
     };
   }
 
-  // 404 is the one definite answer a failure can carry: this backend predates
-  // the endpoint, so it verifies with the provider that existed then. Every
-  // other status is a server having a bad moment and says nothing about which
-  // provider it verifies with.
-  if (res.status === 404) return { kind: 'legacy' };
+  // A 404 is settled, not transient: this backend does not expose the endpoint
+  // at all, so the key it verifies with is unknowable from here and retrying
+  // cannot change that.
+  if (res.status === 404) {
+    return {
+      kind: 'fatal',
+      reason: `${apiUrl}/auth/captcha/config does not exist on this backend`,
+    };
+  }
   if (!res.ok) return { kind: 'retry', reason: `HTTP ${res.status}` };
 
   try {
@@ -163,20 +154,17 @@ async function probe(
     const raw = (await res.json()) as Partial<CaptchaConfig> & {
       result?: Partial<CaptchaConfig>;
     };
-    return validate(raw.result ?? raw, fallbackSiteKey);
+    return validate(raw.result ?? raw);
   } catch {
     return { kind: 'retry', reason: 'response body is not valid JSON' };
   }
 }
 
-async function resolve(
-  apiUrl: string,
-  fallbackSiteKey: string
-): Promise<CaptchaConfig> {
+async function resolve(apiUrl: string): Promise<CaptchaConfig> {
   let lastReason = 'unknown';
 
   for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
-    const outcome = await probe(apiUrl, fallbackSiteKey);
+    const outcome = await probe(apiUrl);
 
     if (outcome.kind === 'ok') {
       cache.set(apiUrl, {
@@ -187,18 +175,8 @@ async function resolve(
       return outcome.config;
     }
 
-    if (outcome.kind === 'legacy') {
-      if (!isUsableKey(fallbackSiteKey)) {
-        throw new CaptchaError(
-          'captcha config endpoint is absent and no build-time site key is set'
-        );
-      }
-      const legacy: CaptchaConfig = {
-        provider: 'yandex',
-        siteKey: fallbackSiteKey,
-      };
-      cache.set(apiUrl, { config: legacy, expiresAt: Infinity });
-      return legacy;
+    if (outcome.kind === 'fatal') {
+      throw new CaptchaError(outcome.reason);
     }
 
     lastReason = outcome.reason;
@@ -208,18 +186,14 @@ async function resolve(
     }
   }
 
-  // Out of attempts. What we must NOT do is quietly fall back to the build-time
-  // Yandex key: once a backend has moved to reCAPTCHA, that mints a token the
-  // server rejects, and a brief config outage turns into a sign-in failure
-  // nobody can read. A provider we actually saw this backend use is a far
-  // better guess, and it is deliberately not written back to the cache, so the
-  // next call probes again instead of living on a memory.
+  // Out of attempts. The key this backend last handed out is a far better
+  // answer than refusing outright, and it is deliberately not written back to
+  // the cache, so the next call probes again instead of living on a memory.
   const remembered = readLastGood(apiUrl);
   if (remembered) {
     console.warn(
-      '[captcha] config unavailable (%s); using the last provider this backend reported: %s',
-      lastReason,
-      remembered.provider
+      '[captcha] config unavailable (%s); using the last key this backend handed out',
+      lastReason
     );
     return remembered;
   }
@@ -230,8 +204,7 @@ async function resolve(
 }
 
 export async function resolveCaptchaConfig(
-  apiUrl: string,
-  fallbackSiteKey: string
+  apiUrl: string
 ): Promise<CaptchaConfig> {
   const hit = cache.get(apiUrl);
   if (hit && hit.expiresAt > Date.now()) return hit.config;
@@ -239,7 +212,7 @@ export async function resolveCaptchaConfig(
   const pending = inFlight.get(apiUrl);
   if (pending) return pending;
 
-  const request = resolve(apiUrl, fallbackSiteKey).finally(() => {
+  const request = resolve(apiUrl).finally(() => {
     inFlight.delete(apiUrl);
   });
   inFlight.set(apiUrl, request);

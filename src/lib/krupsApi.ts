@@ -8,10 +8,6 @@ const KRUPS_API_URL = '/krups-api';
 console.log('[KRUPS API] Base URL:', KRUPS_API_URL);
 console.log('[KRUPS API] Full URL will be:', window.location.origin + KRUPS_API_URL);
 
-// The build-time key is only a fallback. Which CAPTCHA actually runs, and under
-// which site key, is the backend's answer at /auth/captcha/config - see ./captcha.
-const CAPTCHA_FALLBACK_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
-
 // ============================================
 // ID Generation
 // ============================================
@@ -71,11 +67,11 @@ function clearAuth(): void {
 // CAPTCHA Integration
 // ============================================
 
-// Provider and site key come from the backend, not from this bundle: moving a
-// brand between SmartCaptcha and reCAPTCHA is a server env change and needs no
-// rebuild here. The build-time key is used only if that probe fails.
+// The site key comes from the backend, never from this bundle: rotating the
+// reCAPTCHA key is a server env change and needs no rebuild here. A backend
+// that answers anything but reCAPTCHA is a misconfiguration and fails loudly.
 async function getCaptchaToken(): Promise<string> {
-  const config = await resolveCaptchaConfig(KRUPS_API_URL, CAPTCHA_FALLBACK_SITE_KEY);
+  const config = await resolveCaptchaConfig(KRUPS_API_URL);
   console.log('[KRUPS Auth] CAPTCHA provider:', config.provider);
 
   return getProviderToken(config.provider, config.siteKey);
