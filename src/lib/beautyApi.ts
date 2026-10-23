@@ -1,26 +1,13 @@
 import type { Product } from '@/types';
 import { createSSEParser } from './sseParser';
+import { resolveCaptchaConfig, getCaptchaToken as getProviderToken } from './captcha';
 
 // Beauty (Cosmetics) API Configuration - always use proxy to avoid CORS
 const BEAUTY_API_URL = '/beauty-api';
 
-const CAPTCHA_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
-
-// Declare smartCaptcha global
-declare global {
-  interface Window {
-    smartCaptcha?: {
-      render: (containerId: string, options: {
-        sitekey: string;
-        invisible?: boolean;
-        callback?: (token: string) => void;
-        'error-callback'?: () => void;
-      }) => number;
-      execute: (widgetId?: number) => void;
-      reset: (widgetId?: number) => void;
-    };
-  }
-}
+// The build-time key is only a fallback. Which CAPTCHA actually runs, and under
+// which site key, is the backend's answer at /auth/captcha/config - see ./captcha.
+const CAPTCHA_FALLBACK_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
 
 // ============================================
 // ID Generation
@@ -79,92 +66,14 @@ function clearAuth(): void {
 // CAPTCHA Integration
 // ============================================
 
-let captchaScriptLoaded = false;
-let captchaScriptLoading: Promise<void> | null = null;
-
-function loadCaptchaScript(): Promise<void> {
-  if (captchaScriptLoaded && window.smartCaptcha) {
-    return Promise.resolve();
-  }
-
-  if (captchaScriptLoading) {
-    return captchaScriptLoading;
-  }
-
-  console.log('[BEAUTY Auth] Loading CAPTCHA script...');
-
-  captchaScriptLoading = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://smartcaptcha.yandexcloud.net/captcha.js';
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      console.log('[BEAUTY Auth] CAPTCHA script loaded');
-      captchaScriptLoaded = true;
-      resolve();
-    };
-
-    script.onerror = () => {
-      console.error('[BEAUTY Auth] Failed to load CAPTCHA script');
-      captchaScriptLoading = null;
-      reject(new Error('Failed to load CAPTCHA script'));
-    };
-
-    document.head.appendChild(script);
-  });
-
-  return captchaScriptLoading;
-}
-
+// Provider and site key come from the backend, not from this bundle: moving a
+// brand between SmartCaptcha and reCAPTCHA is a server env change and needs no
+// rebuild here. The build-time key is used only if that probe fails.
 async function getCaptchaToken(): Promise<string> {
-  await loadCaptchaScript();
+  const config = await resolveCaptchaConfig(BEAUTY_API_URL, CAPTCHA_FALLBACK_SITE_KEY);
+  console.log('[BEAUTY Auth] CAPTCHA provider:', config.provider);
 
-  let attempts = 0;
-  while (!window.smartCaptcha && attempts < 50) {
-    await new Promise(r => setTimeout(r, 100));
-    attempts++;
-  }
-
-  if (!window.smartCaptcha) {
-    throw new Error('SmartCaptcha not available after loading');
-  }
-
-  console.log('[BEAUTY Auth] Getting CAPTCHA token (invisible mode)...');
-
-  return new Promise((resolve, reject) => {
-    const containerId = `captcha-${Date.now()}`;
-    const container = document.createElement('div');
-    container.id = containerId;
-    container.style.display = 'none';
-    document.body.appendChild(container);
-
-    try {
-      window.smartCaptcha!.render(containerId, {
-        sitekey: CAPTCHA_SITE_KEY,
-        invisible: true,
-        callback: (token: string) => {
-          console.log('[BEAUTY Auth] CAPTCHA token received');
-          container.remove();
-          resolve(token);
-        },
-        'error-callback': () => {
-          console.error('[BEAUTY Auth] CAPTCHA verification failed');
-          container.remove();
-          reject(new Error('CAPTCHA verification failed'));
-        },
-      });
-    } catch (err) {
-      container.remove();
-      reject(err);
-      return;
-    }
-
-    setTimeout(() => {
-      console.log('[BEAUTY Auth] Executing CAPTCHA...');
-      window.smartCaptcha?.execute();
-    }, 500);
-  });
+  return getProviderToken(config.provider, config.siteKey);
 }
 
 // ============================================
