@@ -1,26 +1,9 @@
 import type { Product } from '@/types';
 import { createSSEParser } from './sseParser';
+import { resolveCaptchaConfig, getCaptchaToken as getProviderToken } from './captcha';
 
 // Bluemarket (Sport & Outdoor) API Configuration - always use proxy to avoid CORS
 const BLUEMARKET_API_URL = '/bluemarket-api';
-
-const CAPTCHA_SITE_KEY = import.meta.env.VITE_YANDEX_SMARTCAPTCHA_SITE_KEY;
-
-// Declare smartCaptcha global
-declare global {
-  interface Window {
-    smartCaptcha?: {
-      render: (containerId: string, options: {
-        sitekey: string;
-        invisible?: boolean;
-        callback?: (token: string) => void;
-        'error-callback'?: () => void;
-      }) => number;
-      execute: (widgetId?: number) => void;
-      reset: (widgetId?: number) => void;
-    };
-  }
-}
 
 // ============================================
 // ID Generation
@@ -79,92 +62,14 @@ function clearAuth(): void {
 // CAPTCHA Integration
 // ============================================
 
-let captchaScriptLoaded = false;
-let captchaScriptLoading: Promise<void> | null = null;
-
-function loadCaptchaScript(): Promise<void> {
-  if (captchaScriptLoaded && window.smartCaptcha) {
-    return Promise.resolve();
-  }
-
-  if (captchaScriptLoading) {
-    return captchaScriptLoading;
-  }
-
-  console.log('[BLUEMARKET Auth] Loading CAPTCHA script...');
-
-  captchaScriptLoading = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://smartcaptcha.yandexcloud.net/captcha.js';
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      console.log('[BLUEMARKET Auth] CAPTCHA script loaded');
-      captchaScriptLoaded = true;
-      resolve();
-    };
-
-    script.onerror = () => {
-      console.error('[BLUEMARKET Auth] Failed to load CAPTCHA script');
-      captchaScriptLoading = null;
-      reject(new Error('Failed to load CAPTCHA script'));
-    };
-
-    document.head.appendChild(script);
-  });
-
-  return captchaScriptLoading;
-}
-
+// The site key comes from the backend, never from this bundle: rotating the
+// reCAPTCHA key is a server env change and needs no rebuild here. A backend
+// that answers anything but reCAPTCHA is a misconfiguration and fails loudly.
 async function getCaptchaToken(): Promise<string> {
-  await loadCaptchaScript();
+  const config = await resolveCaptchaConfig(BLUEMARKET_API_URL);
+  console.log('[BLUEMARKET Auth] CAPTCHA provider:', config.provider);
 
-  let attempts = 0;
-  while (!window.smartCaptcha && attempts < 50) {
-    await new Promise(r => setTimeout(r, 100));
-    attempts++;
-  }
-
-  if (!window.smartCaptcha) {
-    throw new Error('SmartCaptcha not available after loading');
-  }
-
-  console.log('[BLUEMARKET Auth] Getting CAPTCHA token (invisible mode)...');
-
-  return new Promise((resolve, reject) => {
-    const containerId = `captcha-${Date.now()}`;
-    const container = document.createElement('div');
-    container.id = containerId;
-    container.style.display = 'none';
-    document.body.appendChild(container);
-
-    try {
-      window.smartCaptcha!.render(containerId, {
-        sitekey: CAPTCHA_SITE_KEY,
-        invisible: true,
-        callback: (token: string) => {
-          console.log('[BLUEMARKET Auth] CAPTCHA token received');
-          container.remove();
-          resolve(token);
-        },
-        'error-callback': () => {
-          console.error('[BLUEMARKET Auth] CAPTCHA verification failed');
-          container.remove();
-          reject(new Error('CAPTCHA verification failed'));
-        },
-      });
-    } catch (err) {
-      container.remove();
-      reject(err);
-      return;
-    }
-
-    setTimeout(() => {
-      console.log('[BLUEMARKET Auth] Executing CAPTCHA...');
-      window.smartCaptcha?.execute();
-    }, 500);
-  });
+  return getProviderToken(config.provider, config.siteKey);
 }
 
 // ============================================
