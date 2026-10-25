@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import {
   StoreHeader,
@@ -13,7 +12,7 @@ import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { OnboardingProvider } from '@/hooks/useOnboarding';
 import { DemoBanner, DemoWelcomeModal } from '@/components/demo';
 import { useTheme } from '@/hooks/useTheme';
-import { agentManifestHref, webMcpScriptSrc } from '@/lib/webmcp';
+import { agentManifestHref, openStorePicker, webMcpScriptSrc } from '@/lib/webmcp';
 
 /**
  * Exposes this store's agent tools to a browser agent, and points agents at its manifest.
@@ -37,17 +36,21 @@ function useWebMcpTools(): void {
     document.head.appendChild(script);
 
     const href = agentManifestHref(themeName);
-    if (href !== null && document.querySelector('link[rel="ard"]') === null) {
+    if (href !== null && document.querySelector(`link[rel="ard"][href="${href}"]`) === null) {
       const link = document.createElement('link');
       link.rel = 'ard';
       link.href = href;
       document.head.appendChild(link);
     }
-  }, [themeName]);
+    // Intentionally once per document: a store change is always a full page load, and a re-run
+    // could not deliver the new store's tools anyway — the script registers once per window and
+    // ignores any later load, so a second tag would leave the page showing one store while
+    // offering another's tools.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
 export function StorePage() {
-  const navigate = useNavigate();
   const { theme } = useTheme();
 
   useWebMcpTools();
@@ -69,7 +72,7 @@ export function StorePage() {
 
         {/* Fixed Back Button - top on mobile, bottom on desktop */}
         <button
-          onClick={() => navigate('/select')}
+          onClick={openStorePicker}
           className="fixed top-4 left-4 md:top-auto md:bottom-6 md:left-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-lg transition-all hover:scale-105"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.7)',

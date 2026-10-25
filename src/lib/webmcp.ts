@@ -39,3 +39,13 @@ export function agentManifestHref(themeName: ThemeName): string | null {
 export function openStore(themeName: ThemeName): void {
   window.location.assign(`/demo/${themeName}`);
 }
+
+/**
+ * Leaving a store for the picker is a full page load for the same reason, in reverse: the
+ * registration lives as long as the document, so a client-side route change would leave the
+ * store's tools and its hidden agent notice on a page that shows no store at all — and a
+ * back-forward-cache restore of that document would register them there again.
+ */
+export function openStorePicker(): void {
+  window.location.assign('/select');
+}
