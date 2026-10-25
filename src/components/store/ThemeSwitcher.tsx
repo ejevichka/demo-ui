@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { openStore } from '@/lib/webmcp';
 import type { ThemeName } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu } from 'lucide-react';
@@ -12,7 +13,7 @@ const industries: { id: ThemeName; name: string }[] = [
 ];
 
 export function ThemeSwitcher() {
-  const { themeName, setTheme } = useTheme();
+  const { themeName } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +83,7 @@ export function ThemeSwitcher() {
               {industries.map((industry) => (
                 <motion.button
                   key={industry.id}
-                  onClick={() => setTheme(industry.id)}
+                  onClick={() => openStore(industry.id)}
                   className={cn(
                     'px-3 py-2 rounded-xl text-[13px] transition-all text-left whitespace-nowrap',
                     themeName === industry.id ? 'font-medium' : 'opacity-70 hover:opacity-100'

@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
+import { openStore } from '@/lib/webmcp';
 import { DemoBanner } from '@/components/demo';
 import type { ThemeName } from '@/types';
 
@@ -31,12 +31,13 @@ const industries: Industry[] = [
 ];
 
 export function IndustrySelectPage() {
-  const navigate = useNavigate();
 
   const handleSelect = (industry: Industry) => {
     // Track industry selection
     analytics.trackIndustrySelect(industry.id);
-    navigate(`/demo/${industry.id}`);
+    // Full page load, not a client-side route change: the store's page registers its own
+    // WebMCP tools for the life of its document (see src/lib/webmcp.ts).
+    openStore(industry.id);
   };
 
   return (

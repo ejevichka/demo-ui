@@ -13,7 +13,7 @@
       "destination": "https://api-mrseanuz3a-ew.a.run.app/:path*"
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ]

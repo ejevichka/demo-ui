@@ -1,0 +1,31 @@
+# Brainform demo stand
+
+A demo of Brainform's AI shopping assistant, presented as three independent storefronts on one site: electronics,
+sport and outdoor, and beauty. Each storefront has its own catalogue and its own search API, reached under its own
+path prefix. Catalogue data, prices and reviews are demo data, and no order placed here is processed.
+
+Each storefront page registers its own store's WebMCP tools in a browser that supports WebMCP, so an agent running in
+the browser can search that store's catalogue and ask questions about it without clicking through the page. The tools
+a page offers are the ones that store's own MCP endpoint lists; the documents linked below describe each store's
+server, its interfaces and its limits.
+
+## Electronics store
+- [Storefront](https://demo.brainform.ai/demo/brownmarket)
+- [MCP server](https://demo.brainform.ai/krups-api/.well-known/mcp.json)
+- [Agent card](https://demo.brainform.ai/krups-api/.well-known/agent-card.json)
+- [Agent manifest](https://demo.brainform.ai/krups-api/.well-known/ard.json)
+
+## Sport and outdoor store
+- [Storefront](https://demo.brainform.ai/demo/bluemarket)
+- [MCP server](https://demo.brainform.ai/bluemarket-api/.well-known/mcp.json)
+- [Agent card](https://demo.brainform.ai/bluemarket-api/.well-known/agent-card.json)
+- [Agent manifest](https://demo.brainform.ai/bluemarket-api/.well-known/ard.json)
+
+## Beauty store
+- [Storefront](https://demo.brainform.ai/demo/brainform)
+- [MCP server](https://demo.brainform.ai/beauty-api/.well-known/mcp.json)
+- [Agent card](https://demo.brainform.ai/beauty-api/.well-known/agent-card.json)
+- [Agent manifest](https://demo.brainform.ai/beauty-api/.well-known/ard.json)
+
+## About
+- [Brainform](https://brainform.ai)
