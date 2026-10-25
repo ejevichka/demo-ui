@@ -6,6 +6,20 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      // One HTML entry per storefront. They differ only in the static head: title, description, the
+      // store's ARD link and its WebMCP registration script, which must be in the markup rather than
+      // injected after hydration so an agent finds the tools on load. Vercel rewrites /demo/<store>
+      // to the matching file; the router still reads location.pathname, so nothing else changes.
+      input: {
+        main: 'index.html',
+        brownmarket: 'stores/brownmarket.html',
+        bluemarket: 'stores/bluemarket.html',
+        brainform: 'stores/brainform.html',
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
