@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Beauty and Cosmetics</title>
+    <meta name="description" content="Premium cosmetics, skincare and fragrances, with an AI shopping assistant." />
+    <!-- WebMCP origin trial for https://demo.brainform.ai — registered 2026-10-25, expires 2027-03-30.
+         Without it the agent tools this page registers are visible only in a Chrome started with
+         --enable-features=WebMCP. The token is public (it ships in the page source), bound to this exact
+         origin and to that date; Chrome ignores an expired one. Renew at developer.chrome.com/origintrials. -->
+    <meta http-equiv="origin-trial" content="AlF/DQ82NSSL/jfnK/Gt9sczyZRsPu8gaPfm2aVq36wd1e224N5hTg06+wyyAKxtP07u6UwpSoXGSdm1UR+dNQgAAABReyJvcmlnaW4iOiJodHRwczovL2RlbW8uYnJhaW5mb3JtLmFpOjQ0MyIsImZlYXR1cmUiOiJXZWJNQ1AiLCJleHBpcnkiOjE4MDYzNjQ4MDB9" />
+    <!-- Agentic Resource Discovery: this store's MCP server and A2A agent, served by its brand search API. In the
+         static HTML so an agent finds it without waiting for the app to hydrate. -->
+    <link rel="ard" href="/beauty-api/.well-known/ard.json" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- WebMCP: this store's public tools, from the MCP endpoint beside this script's own mount. Static and here
+         rather than injected from React, so the tools are registered as early as possible and an agent that looks
+         at the page on load does not arrive before them. StorePage keeps an injection as a fallback; its guard
+         matches this exact src, so it adds nothing when this tag is present. -->
+    <script type="module" src="/beauty-api/webmcp/register.js" vite-ignore></script>
+  </body>
+</html>

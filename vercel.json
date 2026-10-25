@@ -13,6 +13,18 @@
       "destination": "https://api-mrseanuz3a-ew.a.run.app/:path*"
     },
     {
+      "source": "/demo/brownmarket",
+      "destination": "/stores/brownmarket.html"
+    },
+    {
+      "source": "/demo/bluemarket",
+      "destination": "/stores/bluemarket.html"
+    },
+    {
+      "source": "/demo/brainform",
+      "destination": "/stores/brainform.html"
+    },
+    {
       "source": "/((?!assets/|\\.well-known/).*)",
       "destination": "/index.html"
     }
