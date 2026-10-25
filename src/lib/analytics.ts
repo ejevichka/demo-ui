@@ -3,6 +3,8 @@
  * Sends events to Google Sheets via Apps Script webhook.
  */
 
+import { REQUIRE_LOGIN } from './access';
+
 const WEBHOOK_URL = import.meta.env.VITE_ANALYTICS_WEBHOOK_URL as string | undefined;
 
 interface UserInfo {
@@ -14,6 +16,13 @@ interface UserInfo {
 }
 
 function getUserInfo(): UserInfo | null {
+  // With the access gate off (src/lib/access.ts) no form collects these details, so a record left
+  // in localStorage by an earlier visit must not be attached to today's events: the visitor sees
+  // no form and gives no consent, yet their name, email and company would still be sent.
+  if (!REQUIRE_LOGIN) {
+    return null;
+  }
+
   try {
     const stored = localStorage.getItem('brainform_user');
     return stored ? JSON.parse(stored) : null;

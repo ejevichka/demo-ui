@@ -19,8 +19,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const advance = useCallback(() => {
     setStep(prev => {
       if (prev === 'step1_product_card') return 'step2_modal_suggestions';
-      if (prev === 'step2_modal_suggestions') return 'step3_theme_switcher';
-      if (prev === 'step3_theme_switcher') return 'complete';
+      // The tour ends after step 2. `step3_theme_switcher` was planned but no component ever
+      // rendered it (OnboardingTour returns null for it) and nothing advanced out of it, so the
+      // machine stalled there and never persisted completion — which meant the tour restarted on
+      // every document load. Harmless while store switching stayed inside the SPA; now that it is
+      // a full page load (src/lib/webmcp.ts), the step-1 tooltips reappeared on every store.
+      if (prev === 'step2_modal_suggestions') return 'complete';
       return prev;
     });
   }, []);
