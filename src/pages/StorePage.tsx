@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import {
@@ -12,10 +13,44 @@ import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { OnboardingProvider } from '@/hooks/useOnboarding';
 import { DemoBanner, DemoWelcomeModal } from '@/components/demo';
 import { useTheme } from '@/hooks/useTheme';
+import { agentManifestHref, webMcpScriptSrc } from '@/lib/webmcp';
+
+/**
+ * Exposes this store's agent tools to a browser agent, and points agents at its manifest.
+ *
+ * The script is loaded from this store's own API prefix, which is what decides whose tools get registered — see
+ * src/lib/webmcp.ts. It is not removed on unmount: the registration belongs to the document and the script itself
+ * drops it on `pagehide`, so removing the tag would leave the tools registered with nothing watching them.
+ */
+function useWebMcpTools(): void {
+  const { themeName } = useTheme();
+
+  useEffect(() => {
+    const src = webMcpScriptSrc(themeName);
+    if (src === null || document.querySelector(`script[src="${src}"]`) !== null) {
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = src;
+    document.head.appendChild(script);
+
+    const href = agentManifestHref(themeName);
+    if (href !== null && document.querySelector('link[rel="ard"]') === null) {
+      const link = document.createElement('link');
+      link.rel = 'ard';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  }, [themeName]);
+}
 
 export function StorePage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+
+  useWebMcpTools();
 
   return (
     <OnboardingProvider>
